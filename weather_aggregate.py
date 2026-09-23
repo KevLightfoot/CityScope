@@ -13,18 +13,23 @@ spark = (
 )
 spark.sparkContext.setLogLevel("WARN")
 
+
+# Create df from cleaned parquet
 weather_df = (spark.read.parquet("data/processed/weather_observations"))
 
+# df with years and months
 weather_year_and_month = (
     weather_df
     .withColumn("year", year(col("date")))
     .withColumn("month", month(col("date")))
 )
 
+# Group on ID, year, and month 
 weather_grouped = (
     weather_year_and_month.groupBy("station_id", "year", "month")
 )
 
+# Aggregate weather_grouped to store monthly highs, lows, averages, and observation counts
 weather_aggregated = (
     weather_grouped.agg(
         avg(
@@ -66,4 +71,6 @@ weather_aggregated = (
     )
  )
 
-weather_aggregated.show(15, truncate=False)
+# weather_aggregated.show(15, truncate=False)
+
+spark.stop()
