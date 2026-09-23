@@ -99,7 +99,7 @@ weather_observations_final.write.mode("overwrite").parquet("data/processed/weath
 
 
 
-weather_observations_final.select("station_id", "date", "element", "temperature_f", "latitude", "longitude", "station_name").show(5, truncate=False)
+# weather_observations_final.select("station_id", "date", "element", "temperature_f", "latitude", "longitude", "station_name").show(5, truncate=False)
 
 spark.stop()
 
