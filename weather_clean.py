@@ -70,7 +70,16 @@ stations_df = (
     )
 )
 
-stations_df.filter(col("station_id").startswith("US")).show(5, truncate=False)
+# Join weather_cleaned and stations_df
+weather_and_stations = (
+    weather_cleaned.join(
+        stations_df,
+        weather_cleaned["station_id"] == stations_df["station_id"],
+        "inner"
+    )
+)
+
+weather_and_stations.filter(col("station_id").startswith("US")).select("station_id", "date", "element", "temperature_f", "latitude", "longitude", "station_name").show(5, truncate=False)
 
 
 
