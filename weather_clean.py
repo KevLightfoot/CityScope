@@ -70,7 +70,7 @@ stations_raw = (
     spark.read.text("data/raw/weather/ghcnd-stations.txt")
 )
 
-# Create DF for weather stations 
+# Create a DataFrame containing the parsed station metadata. 
 stations_df = (
     stations_raw.select(
         trim(substring(col("value"), 1, 11)).alias("station_id"), 
@@ -103,8 +103,6 @@ weather_observations_final = (
 
 # Save cleaned observations as Parquet for downstream Spark processing.
 weather_observations_final.write.mode("overwrite").parquet("data/processed/weather_observations")
-
-# weather_observations_final.select("station_id", "date", "element", "temperature_f", "latitude", "longitude", "station_name").show(5, truncate=False)
 
 spark.stop()
 
