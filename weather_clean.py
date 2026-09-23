@@ -3,7 +3,7 @@ weather_clean.py processes NOAA GHCN-Daily observations for Spark for CityScope
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, to_date, substring, trim
+from pyspark.sql.functions import col, to_date, substring, trim, when
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
 
 
@@ -37,12 +37,11 @@ weather_df = (
     .option("header", "False")
     .schema(weather_schema)
     .option("sep", ",")
-    .option("compression", "gzip")
     .csv("data/raw/weather/2022.csv.gz")
 
 )
 
-# Clean weather_df to include only US Stations, temperature in fahrenheit, and formatted date
+# Clean weather_df to include US only Stations, temperature in fahrenheit, and formatted date
 weather_cleaned = (
     weather_df
     .filter(
@@ -50,7 +49,13 @@ weather_cleaned = (
         &
         col("element").isin("TAVG","TMAX","TMIN")
     )
-    .withColumn("temperature_f", ((col("value") / 10.0) * 9/5) + 32)
+    .withColumn("temperature_f", 
+                when(col("value") != -9999,
+                    ((col("value") / 10.0) * 9/5) + 32         
+                ).otherwise(None)
+    )
+
+
     .withColumn("date", to_date(col("date"), "yyyyMMdd"))
 )
 
@@ -94,9 +99,9 @@ weather_observations_final.write.mode("overwrite").parquet("data/processed/weath
 
 
 
+weather_observations_final.select("station_id", "date", "element", "temperature_f", "latitude", "longitude", "station_name").show(5, truncate=False)
 
-# weather_and_stations.filter(col("station_id").startswith("US")).select("station_id", "date", "element", "temperature_f", "latitude", "longitude", "station_name").show(5, truncate=False)
-
+spark.stop()
 
 
 
