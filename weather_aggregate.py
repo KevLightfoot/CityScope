@@ -73,4 +73,6 @@ weather_aggregated = (
 
 # weather_aggregated.show(15, truncate=False)
 
+weather_aggregated.write.mode("overwrite").parquet("data/processed/weather_monthly")
+
 spark.stop()
