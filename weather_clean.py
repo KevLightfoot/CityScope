@@ -35,7 +35,7 @@ weather_schema = StructType(
 weather_df = (
     spark.read
     .option("header", "False")
-    .option("schema", weather_schema)
+    .schema(weather_schema)
     .option("sep", ",")
     .option("compression", "gzip")
     .csv("data/raw/weather/2022.csv.gz")
