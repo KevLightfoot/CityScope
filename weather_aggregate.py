@@ -65,3 +65,5 @@ weather_aggregated = (
         count("temperature_f").alias("observation_count")
     )
  )
+
+weather_aggregated.show(15, truncate=False)
