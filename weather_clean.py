@@ -62,11 +62,11 @@ stations_raw = (
 # Create DF for weather stations 
 stations_df = (
     stations_raw.select(
-        substring(col("value"), 1, 11).trim().alias("station_id"), 
-        substring(col("value"), 13, 8).trim().cast(DoubleType()).alias("latitude"),
-        substring(col("value"), 22, 9).trim().cast(DoubleType()).alias("longitude"),
-        substring(col("value"), 32, 6).trim().cast(DoubleType()).alias("elevation"),
-        substring(col("value"), 42, 30).trim().alias("sation_name")
+        trim(substring(col("value"), 1, 11)).alias("station_id"), 
+        trim(substring(col("value"), 13, 8)).cast(DoubleType()).alias("latitude"),
+        trim(substring(col("value"), 22, 9)).cast(DoubleType()).alias("longitude"),
+        trim(substring(col("value"), 32, 6)).cast(DoubleType()).alias("elevation"),
+        trim(substring(col("value"), 42, 30)).alias("sation_name")
     )
 )
 
