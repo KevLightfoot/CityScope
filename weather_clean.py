@@ -75,7 +75,25 @@ weather_and_stations = (
     weather_cleaned.join(stations_df, "station_id", "inner")
     )
 
-weather_and_stations.filter(col("station_id").startswith("US")).select("station_id", "date", "element", "temperature_f", "latitude", "longitude", "station_name").show(5, truncate=False)
+weather_observations_final = (
+    weather_and_stations.select(
+        col("station_id"),
+        col("date"),
+        col("element"),
+        col("value"),
+        col("temperature_f"),
+        col("lattitude"),
+        col("longitude"),
+        col("elevation"),
+        col("station_name")
+    )
+)
+
+
+
+
+
+# weather_and_stations.filter(col("station_id").startswith("US")).select("station_id", "date", "element", "temperature_f", "latitude", "longitude", "station_name").show(5, truncate=False)
 
 
 
