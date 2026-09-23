@@ -75,6 +75,7 @@ weather_and_stations = (
     weather_cleaned.join(stations_df, "station_id", "inner")
     )
 
+# Final cleaned weather observations df
 weather_observations_final = (
     weather_and_stations.select(
         col("station_id"),
@@ -89,6 +90,7 @@ weather_observations_final = (
     )
 )
 
+weather_observations_final.write.mode("overwrite").parquet("data/processed/weather_observations")
 
 
 
