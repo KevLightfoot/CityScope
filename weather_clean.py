@@ -82,7 +82,7 @@ weather_observations_final = (
         col("element"),
         col("value"),
         col("temperature_f"),
-        col("lattitude"),
+        col("latitude"),
         col("longitude"),
         col("elevation"),
         col("station_name")
