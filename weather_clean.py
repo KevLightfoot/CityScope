@@ -66,7 +66,7 @@ stations_df = (
         trim(substring(col("value"), 13, 8)).cast(DoubleType()).alias("latitude"),
         trim(substring(col("value"), 22, 9)).cast(DoubleType()).alias("longitude"),
         trim(substring(col("value"), 32, 6)).cast(DoubleType()).alias("elevation"),
-        trim(substring(col("value"), 42, 30)).alias("sation_name")
+        trim(substring(col("value"), 42, 30)).alias("station_name")
     )
 )
 
