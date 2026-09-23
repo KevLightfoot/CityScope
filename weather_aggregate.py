@@ -1,11 +1,12 @@
 """
-weather_aggregate.py takes weather observations from weather_clean and creates monthly weather observations 
+weather_aggregate.py aggregates cleaned weather observations into
+monthly station-level climate summaries for CityScope. 
 """
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, avg, max, min, count, year, month, when
 
-# Create Spark Session
+# Create a local Spark session using 4 worker threads.
 spark = (
     SparkSession.builder.appName("CityScope Weather Aggregation")
     .master("local[4]")
@@ -14,22 +15,23 @@ spark = (
 spark.sparkContext.setLogLevel("WARN")
 
 
-# Create df from cleaned parquet
+# Read the cleaned weather observations from Parquet.
 weather_df = (spark.read.parquet("data/processed/weather_observations"))
 
-# df with years and months
+# Extract year and month from each observation date for monthly aggregation.
 weather_year_and_month = (
     weather_df
     .withColumn("year", year(col("date")))
     .withColumn("month", month(col("date")))
 )
 
-# Group on ID, year, and month 
+# Group observations by station, year, and month. 
 weather_grouped = (
     weather_year_and_month.groupBy("station_id", "year", "month")
 )
 
-# Aggregate weather_grouped to store monthly highs, lows, averages, and observation counts
+# Calculate monthly temperature averages, recorded extremes,
+# and the number of valid temperature observations for each station.
 weather_aggregated = (
     weather_grouped.agg(
         avg(
@@ -73,6 +75,7 @@ weather_aggregated = (
 
 # weather_aggregated.show(15, truncate=False)
 
+# Save monthly station-level climate summaries as Parquet.
 weather_aggregated.write.mode("overwrite").parquet("data/processed/weather_monthly")
 
 spark.stop()
