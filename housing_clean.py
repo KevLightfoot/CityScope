@@ -49,4 +49,4 @@ housing_cleaned = (
     )
 )
 
-print(housing_cleaned.count())
+housing_cleaned.write.mode("overwrite").parquet("data/processed/housing_clean")
