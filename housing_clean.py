@@ -45,7 +45,9 @@ housing_cleaned = (
         col("lng").isNotNull() &
         col("lng").between(-180, 180) &
         (col("status") == "active") &
-        (col("list_price") > 0)
+        (col("list_price") > 0) &
+        col("property_type").isin("single_family", "condo", "townhouse", "multi_family", "manufactured", "apartment") &
+        (col("list_price") <= 3000000)
     )
 )
 
