@@ -77,16 +77,6 @@ housing_enriched = (
     housing_cleaned.join(tracts, ST_Contains(tracts.geometry, housing_cleaned.point), "inner")
 )
 
-# housing_cleaned.write.mode("overwrite").parquet("data/processed/housing_clean")
-housing_enriched.select("lat", "lng", "GEOID").show(20, truncate = False)
-
-print("Cleaned:", housing_cleaned.count())
-print("Enriched:", housing_enriched.count())
-
-unmatched = housing_cleaned.join(
-    housing_enriched.select("id").distinct(),
-    "id",
-    "left_anti"
-)
+housing_enriched.write.mode("overwrite").parquet("data/processed/housing")
 
 spark.stop()
