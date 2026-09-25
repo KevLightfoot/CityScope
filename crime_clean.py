@@ -43,8 +43,10 @@ batch_header_df = (
         "ori",
         "city_name",
         "state_abbreviation",
-        "population"
+        "population",
+        "year"
     )
+    .filter("year = 2024")
 )
 
 crime_joined = (
