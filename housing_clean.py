@@ -89,8 +89,4 @@ unmatched = housing_cleaned.join(
     "left_anti"
 )
 
-print("Unmatched:", unmatched.count())
-
-unmatched.select(
-    "id", "city", "state", "lat", "lng"
-).show(101, truncate=False)
+spark.stop()
