@@ -6,6 +6,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
 from sedona.spark import SedonaContext
 from sedona.spark.sql.st_constructors import ST_Point
+from sedona.spark.sql import ST_Contains
 
 
 
@@ -72,5 +73,9 @@ housing_cleaned = (
     .withColumn("point", ST_Point(col("lng"), col("lat")))
 )
 
+housing_enriched = (
+    housing_cleaned.join(tracts, ST_Contains(tracts.geometry, housing_cleaned.point), "inner")
+)
+
 # housing_cleaned.write.mode("overwrite").parquet("data/processed/housing_clean")
-housing_cleaned.select("lat", "lng", "point").show(5, truncate=False)
+housing_enriched.select("lat", "lng", "GEOID").show(20, truncate = False)
