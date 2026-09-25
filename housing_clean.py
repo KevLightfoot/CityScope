@@ -4,14 +4,24 @@ housing_clean.py cleans U.S. real estate data for CityScope using Apache Spark.
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col
+from sedona.spark import SedonaContext
+from sedona.spark.sql.st_constructors import ST_Point
+
 
 
 spark = (
-    SparkSession.builder.appName("Cityscope Housing Cleaning")
+    SedonaContext.builder()
+    .appName("Cityscope Housing Cleaning")
     .master("local[4]")
+    .config(
+        "spark.jars.packages",
+        "org.apache.sedona:sedona-spark-4.0_2.13:1.9.1,"
+        "org.datasyslab:geotools-wrapper:1.9.1-33.5"
+    )
     .getOrCreate()
 )
 
+sedona = SedonaContext.create(spark)
 spark.sparkContext.setLogLevel("WARN")
 
 housing_df = (spark.read.parquet("data/raw/housing/texas_properties.parquet"))
@@ -38,6 +48,16 @@ housing_defined = (
     )
 )
 
+tracts = (
+    sedona.read
+    .format("parquet")
+    .load("data/processed/tracts")
+    .select(
+        "GEOID",
+        "geometry" 
+    )
+)
+
 housing_cleaned = (
     housing_defined.filter(
         col("lat").isNotNull() &
@@ -49,6 +69,8 @@ housing_cleaned = (
         col("property_type").isin("single_family", "condo", "townhouse", "multi_family", "manufactured", "apartment") &
         (col("list_price") <= 3000000)
     )
+    .withColumn("point", ST_Point(col("lng"), col("lat")))
 )
 
-housing_cleaned.write.mode("overwrite").parquet("data/processed/housing_clean")
+# housing_cleaned.write.mode("overwrite").parquet("data/processed/housing_clean")
+housing_cleaned.select("lat", "lng", "point").show(5, truncate=False)
