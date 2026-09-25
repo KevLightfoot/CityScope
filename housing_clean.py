@@ -78,4 +78,7 @@ housing_enriched = (
 )
 
 # housing_cleaned.write.mode("overwrite").parquet("data/processed/housing_clean")
-housing_enriched.select("lat", "lng", "GEOID").show(20, truncate = False)
+#housing_enriched.select("lat", "lng", "GEOID").show(20, truncate = False)
+
+print("Cleaned:", housing_cleaned.count())
+print("Enriched:", housing_enriched.count())
