@@ -78,7 +78,19 @@ housing_enriched = (
 )
 
 # housing_cleaned.write.mode("overwrite").parquet("data/processed/housing_clean")
-#housing_enriched.select("lat", "lng", "GEOID").show(20, truncate = False)
+housing_enriched.select("lat", "lng", "GEOID").show(20, truncate = False)
 
-print("Cleaned total:", housing_cleaned.count())
-print("Cleaned distinct IDs:", housing_cleaned.select("id").distinct().count())
+print("Cleaned:", housing_cleaned.count())
+print("Enriched:", housing_enriched.count())
+
+unmatched = housing_cleaned.join(
+    housing_enriched.select("id").distinct(),
+    "id",
+    "left_anti"
+)
+
+print("Unmatched:", unmatched.count())
+
+unmatched.select(
+    "id", "city", "state", "lat", "lng"
+).show(101, truncate=False)
