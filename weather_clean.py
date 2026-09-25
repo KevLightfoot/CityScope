@@ -5,15 +5,25 @@ weather_clean.py cleans NOAA GHCN-Daily temperature observations and station met
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, to_date, substring, trim, when
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
-
+from sedona.spark import SedonaContext
+from sedona.spark.sql.st_constructors import ST_Point
+from sedona.spark.sql import ST_Contains
 
 
 # Create a local Spark session using 4 worker threads.
 spark = (
-    SparkSession.builder.appName("CityScope Weather Cleaning")
+    SedonaContext.builder()
+    .appName("CityScope Weather Cleaning")
     .master("local[4]")
+    .config(
+        "spark.jars.packages",
+        "org.apache.sedona:sedona-spark-4.0_2.13:1.9.1,"
+        "org.datasyslab:geotools-wrapper:1.9.1-33.5"
+    )
     .getOrCreate()
 )
+
+sedona = SedonaContext.create(spark)
 spark.sparkContext.setLogLevel("WARN")
 
 # Define the schema for NOAA GHCN-Daily observation records. 
@@ -74,8 +84,8 @@ stations_raw = (
 stations_df = (
     stations_raw.select(
         trim(substring(col("value"), 1, 11)).alias("station_id"), 
-        trim(substring(col("value"), 13, 8)).cast(DoubleType()).alias("latitude"),
-        trim(substring(col("value"), 22, 9)).cast(DoubleType()).alias("longitude"),
+        trim(substring(col("value"), 13, 8)).cast(DoubleType()).alias("lat"),
+        trim(substring(col("value"), 22, 9)).cast(DoubleType()).alias("lng"),
         trim(substring(col("value"), 32, 6)).cast(DoubleType()).alias("elevation"),
         trim(substring(col("value"), 42, 30)).alias("station_name")
     )
@@ -86,6 +96,16 @@ weather_and_stations = (
     weather_cleaned.join(stations_df, "station_id", "inner")
     )
 
+tracts = (
+    sedona.read
+    .format("parquet")
+    .load("data/processed/tracts")
+    .select(
+        "GEOID",
+        "geometry" 
+    )
+)
+
 # Keep the fields required for downstream CityScope weather analysis.
 weather_observations_final = (
     weather_and_stations.select(
@@ -94,15 +114,25 @@ weather_observations_final = (
         col("element"),
         col("value"),
         col("temperature_f"),
-        col("latitude"),
-        col("longitude"),
+        col("lat"),
+        col("lng"),
         col("elevation"),
         col("station_name")
     )
+    .withColumn("point", ST_Point(col("lng"),  col("lat")))
 )
 
+weather_enriched = (
+    weather_observations_final.join(
+        tracts, 
+        ST_Contains(tracts.geometry, weather_observations_final.point), 
+        "inner")
+)
+
+
+
 # Save cleaned observations as Parquet for downstream Spark processing.
-weather_observations_final.write.mode("overwrite").parquet("data/processed/weather_observations")
+weather_enriched.write.mode("overwrite").parquet("data/processed/weather_observations")
 
 spark.stop()
 
