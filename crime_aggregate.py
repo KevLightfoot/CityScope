@@ -4,7 +4,7 @@ into city-level crime metrics
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count_distinct, lower, trim
+from pyspark.sql.functions import col, count_distinct, lower, trim, when
 
 # Create Spark session
 spark = (
@@ -29,8 +29,13 @@ crime_df = (
         lower(trim(col("city_name")))
     )
     .withColumn(
-        "state_key",
+    "state_key",
+    when(
+        lower(trim(col("state_abbreviation"))) == "tx",
+        "texas"
+    ).otherwise(
         lower(trim(col("state_abbreviation")))
+    )
     )
 )
 
