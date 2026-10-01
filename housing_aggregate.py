@@ -58,16 +58,6 @@ housing_aggregated = (
         avg(
             when(col("sqft") > 0, col("sqft"))
         ).alias("avg_sqft"),
-
-        # Average number of bedrooms.
-        avg(
-            when(col("beds") >= 0, col("beds"))
-        ).alias("avg_beds"),
-
-        # Average number of bathrooms.
-        avg(
-            when(col("baths") >= 0, col("baths"))
-        ).alias("avg_baths")
     )
 )
 
