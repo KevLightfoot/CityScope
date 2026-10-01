@@ -288,6 +288,7 @@ print("\nGeography validation:")
 clean_df.select(
     "NAME",
     "city_name",
+    "place_type",
     "state",
     "city_key",
     "state_key"
