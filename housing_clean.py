@@ -8,8 +8,7 @@ from sedona.spark import SedonaContext
 from sedona.spark.sql.st_constructors import ST_Point
 from sedona.spark.sql import ST_Contains
 
-
-
+# Create Spark Session
 spark = (
     SedonaContext.builder()
     .appName("Cityscope Housing Cleaning")
@@ -22,11 +21,14 @@ spark = (
     .getOrCreate()
 )
 
+# Sedona needed for spatial enrichment
 sedona = SedonaContext.create(spark)
 spark.sparkContext.setLogLevel("WARN")
 
+# Read raw housing data
 housing_df = (spark.read.parquet("data/raw/housing/texas_properties.parquet"))
 
+# Keep only important fields
 housing_defined = (
     housing_df.select(
         "id",
@@ -49,6 +51,7 @@ housing_defined = (
     )
 )
 
+# Read proccessed tract data needed for spatial enrichment
 tracts = (
     sedona.read
     .format("parquet")
@@ -59,6 +62,9 @@ tracts = (
     )
 )
 
+# Filter out null/weird geography fields, non active/null priced listings,
+# Non residential property types, and extreme priced properties
+# Also create "point" collumn needed for ST_contains   
 housing_cleaned = (
     housing_defined.filter(
         col("lat").isNotNull() &
@@ -73,10 +79,12 @@ housing_cleaned = (
     .withColumn("point", ST_Point(col("lng"), col("lat")))
 )
 
+# Inner join on housing_cleaned and tracts for spatial enrichment 
 housing_enriched = (
     housing_cleaned.join(tracts, ST_Contains(tracts.geometry, housing_cleaned.point), "inner")
 )
 
+# Final parquet write
 housing_enriched.write.mode("overwrite").parquet("data/processed/housing")
 
 spark.stop()

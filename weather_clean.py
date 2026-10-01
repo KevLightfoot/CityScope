@@ -61,8 +61,8 @@ weather_cleaned = (
     )
 
     # NOAA uses -9999 to represent missing temperature measurements.
-    # Convert valid tenths-of-a-degree Celsius values to Fahrenheit and
-    # represent missing measurements as NULL.
+    # Convert valid Celsius values to Fahrenheit and
+    # Represent missing measurements as NULL.
     .withColumn("temperature_f", 
                 when(col("value") != -9999,
                     ((col("value") / 10.0) * 9/5) + 32         
@@ -96,6 +96,7 @@ weather_and_stations = (
     weather_cleaned.join(stations_df, "station_id", "inner")
     )
 
+# Read proccessed tract data needed for spatial enrichment
 tracts = (
     sedona.read
     .format("parquet")
@@ -122,6 +123,7 @@ weather_observations_final = (
     .withColumn("point", ST_Point(col("lng"),  col("lat")))
 )
 
+# Spatially enrich weather df
 weather_enriched = (
     weather_observations_final.join(
         tracts, 
@@ -131,7 +133,7 @@ weather_enriched = (
 
 
 
-# Save cleaned observations as Parquet for downstream Spark processing.
+# Final parquet write
 weather_enriched.write.mode("overwrite").parquet("data/processed/weather_observations")
 
 spark.stop()

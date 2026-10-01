@@ -11,7 +11,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, expr
 
 # Create a local Spark session for processing the 
-# Census dataset using 2 local worker threads.
+# Census dataset using 4 local worker threads.
 spark = (
     SparkSession.builder
     .appName("CityScope Census Cleaning")
@@ -28,7 +28,7 @@ census_df = (
 )
 
 # Select the fields needed by CityScope and convert demographic
-# values to appropriate numeric data types.
+# values to appropriate data types.
 clean_df = (
     census_df
     .select(
@@ -42,8 +42,7 @@ clean_df = (
     .filter(col("GEO_ID") != "Geography")
 )
 
-# Data cleaning is complete:
-# Write the cleaned Census data as Parquet for downstream processing.
+# Write the cleaned Census data as Parquet 
 clean_df.write.mode("overwrite").parquet("data/processed/census_clean")
 
 spark.stop()

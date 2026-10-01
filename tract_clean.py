@@ -24,7 +24,7 @@ spark = (
 
 sedona = SedonaContext.create(spark)
 
-
+# turn raw tracts shapefile into cleaned dataframe
 tracts_df = (
     sedona.read
     .format("shapefile")
@@ -43,6 +43,7 @@ tracts_df = (
     )
 )
 
+# Final Parquet Write
 tracts_df.write.mode("overwrite").parquet("data/processed/tracts")
 
 

@@ -6,20 +6,23 @@ into city-level crime metrics
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, count_distinct
 
+# Create Spark session
 spark = (
     SparkSession.builder
     .appName("CityScope Crime Aggregation")
     .master("local[4]")
     .getOrCreate()
 )
-
 spark.sparkContext.setLogLevel("WARN")
 
+# Read processed crime data
 crime_df = (
     spark.read
     .parquet("data/processed/crime")
 )
 
+# Group by city and state
+# and aggregate by unique incidents
 crime_city = (
     crime_df.groupBy(
         "city_name", "state_abbreviation"
@@ -30,6 +33,7 @@ crime_city = (
     )
 )
 
+# Write finalized parquet
 crime_city.write.mode("overwrite").parquet(
     "data/processed/crime_city"
 )
