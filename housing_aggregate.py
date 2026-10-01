@@ -4,8 +4,7 @@ city-level housing summaries for CityScope.
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, avg, count, expr, when
-
+from pyspark.sql.functions import col, avg, count, expr, when, lower, trim
 
 # Create a local Spark session using 4 worker threads.
 spark = (
@@ -23,11 +22,29 @@ housing_df = (
     spark.read.parquet("data/processed/housing/")
 )
 
+# Normalize city and state values for dataset joins.
+housing_df = (
+    housing_df
+    .withColumn(
+        "city_key",
+        lower(trim(col("city")))
+    )
+    .withColumn(
+        "state_key",
+        when(
+            lower(trim(col("state"))) == "tx",
+            "texas"
+        ).otherwise(
+            lower(trim(col("state")))
+        )
+    )
+)
+
 
 # Calculate city-level housing metrics.
 housing_aggregated = (
     housing_df
-    .groupBy("city", "state")
+    .groupBy("city", "state", "city_key", "state_key")
     .agg(
         # Number of housing listings in the city.
         count("*").alias("property_count"),
