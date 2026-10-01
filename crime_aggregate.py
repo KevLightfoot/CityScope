@@ -38,7 +38,7 @@ crime_df = (
 # and aggregate by unique incidents
 crime_city = (
     crime_df.groupBy(
-        "city_name", "state_abbreviation"
+        "city_name", "state_abbreviation", "city_key", "state_key"
     )
     .agg(
         count_distinct("unique_incident_id")
