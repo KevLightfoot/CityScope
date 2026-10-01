@@ -227,6 +227,15 @@ clean_df = (
     )
 
     .withColumn(
+        "place_type",
+        regexp_extract(
+            col("NAME"),
+            r"\s+(city|town|village|CDP),\s*[^,]+$",
+            1
+        )
+    )
+
+    .withColumn(
         "city_name",
         regexp_replace(
             col("city_name"),
