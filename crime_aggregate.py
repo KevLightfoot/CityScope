@@ -4,7 +4,7 @@ into city-level crime metrics
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count_distinct
+from pyspark.sql.functions import col, count_distinct, lower, trim
 
 # Create Spark session
 spark = (
@@ -19,6 +19,19 @@ spark.sparkContext.setLogLevel("WARN")
 crime_df = (
     spark.read
     .parquet("data/processed/crime")
+)
+
+# Normalize city and state values for cross-dataset joins.
+crime_df = (
+    crime_df
+    .withColumn(
+        "city_key",
+        lower(trim(col("city_name")))
+    )
+    .withColumn(
+        "state_key",
+        lower(trim(col("state_abbreviation")))
+    )
 )
 
 # Group by city and state
@@ -39,4 +52,3 @@ crime_city.write.mode("overwrite").parquet(
 )
 
 spark.stop()
-
