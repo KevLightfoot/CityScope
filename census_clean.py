@@ -3,19 +3,24 @@ census_clean.py
 
 Cleans the 2024 ACS DP05 Census dataset for CityScope.
 
-The dataset contains demographic information for U.S. Census places,
-including population, age, sex, race, and Hispanic/Latino origin.
-
 The script:
-1. Reads the raw ACS DP05 CSV using PySpark.
+1. Reads the raw ACS DP05 dataset using PySpark.
 2. Selects the demographic fields needed by CityScope.
-3. Converts Census values to usable numeric types.
-4. Removes the Census metadata row.
-5. Writes the cleaned dataset as Parquet.
+3. Normalizes Census place names and state names.
+4. Converts demographic values into usable numeric types.
+5. Removes the Census metadata row.
+6. Writes the cleaned result as Parquet.
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, expr
+from pyspark.sql.functions import (
+    col,
+    expr,
+    regexp_extract,
+    regexp_replace,
+    lower,
+    trim
+)
 
 
 # ---------------------------------------------------------
@@ -28,6 +33,8 @@ spark = (
     .master("local[2]")
     .getOrCreate()
 )
+
+spark.sparkContext.setLogLevel("WARN")
 
 
 # ---------------------------------------------------------
@@ -43,14 +50,14 @@ census_df = (
 
 
 # ---------------------------------------------------------
-# Select and clean CityScope demographic fields
+# Clean and normalize Census data
 # ---------------------------------------------------------
 
 clean_df = (
     census_df
     .select(
 
-        # Geographic identifiers
+        # Geographic information
         col("GEO_ID"),
         col("NAME"),
 
@@ -66,7 +73,6 @@ clean_df = (
             "try_cast(DP05_0018E AS DOUBLE)"
         ).alias("median_age"),
 
-        # Detailed age distribution
         expr(
             "try_cast(DP05_0005PE AS DOUBLE)"
         ).alias("under_5_pct"),
@@ -119,7 +125,6 @@ clean_df = (
             "try_cast(DP05_0017PE AS DOUBLE)"
         ).alias("age_85_plus_pct"),
 
-        # Broader age groups
         expr(
             "try_cast(DP05_0019PE AS DOUBLE)"
         ).alias("under_18_pct"),
@@ -197,13 +202,62 @@ clean_df = (
         ).alias("hispanic_latino_pct")
     )
 
-    # Remove the metadata row included in the Census CSV.
+    # Remove the Census metadata row.
     .filter(col("GEO_ID") != "Geography")
+
+    # -----------------------------------------------------
+    # Normalize geographic names
+    #
+    # Example:
+    # "Austin city, Texas"
+    #
+    # becomes:
+    # city_name = "Austin"
+    # state     = "Texas"
+    # city_key  = "austin"
+    # -----------------------------------------------------
+
+    .withColumn(
+        "city_name",
+        regexp_extract(
+            col("NAME"),
+            r"^(.*),\s*[^,]+$",
+            1
+        )
+    )
+
+    .withColumn(
+        "city_name",
+        regexp_replace(
+            col("city_name"),
+            r"\s+(city|town|village|CDP)$",
+            ""
+        )
+    )
+
+    .withColumn(
+        "state",
+        regexp_extract(
+            col("NAME"),
+            r",\s*([^,]+)$",
+            1
+        )
+    )
+
+    .withColumn(
+        "city_key",
+        lower(trim(col("city_name")))
+    )
+
+    .withColumn(
+        "state_key",
+        lower(trim(col("state")))
+    )
 )
 
 
 # ---------------------------------------------------------
-# Write cleaned Census dataset
+# Write cleaned Census data
 # ---------------------------------------------------------
 
 clean_df.write \
@@ -212,7 +266,7 @@ clean_df.write \
 
 
 # ---------------------------------------------------------
-# Display basic validation information
+# Validation
 # ---------------------------------------------------------
 
 print("Census cleaning complete.")
@@ -221,8 +275,14 @@ print(f"Records written: {clean_df.count()}")
 print("\nCleaned Census schema:")
 clean_df.printSchema()
 
-print("\nSample records:")
-clean_df.show(5, truncate=False)
+print("\nGeography validation:")
+clean_df.select(
+    "NAME",
+    "city_name",
+    "state",
+    "city_key",
+    "state_key"
+).show(10, truncate=False)
 
 
 # ---------------------------------------------------------
