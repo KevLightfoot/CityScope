@@ -1,17 +1,27 @@
 """
-census_clean.py is the Census preprocessing stage of CityScope. 
-It uses PySpark to read the raw 2024 ACS DP05 dataset, 
-select the demographic fields needed by the project, 
-convert those fields into usable numeric types, 
-remove the Census metadata row, 
-and save the cleaned result as Parquet for downstream analysis.
+census_clean.py
+
+Cleans the 2024 ACS DP05 Census dataset for CityScope.
+
+The dataset contains demographic information for U.S. Census places,
+including population, age, sex, race, and Hispanic/Latino origin.
+
+The script:
+1. Reads the raw ACS DP05 CSV using PySpark.
+2. Selects the demographic fields needed by CityScope.
+3. Converts Census values to usable numeric types.
+4. Removes the Census metadata row.
+5. Writes the cleaned dataset as Parquet.
 """
 
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, expr
 
-# Create a local Spark session for processing the 
-# Census dataset using 4 local worker threads.
+
+# ---------------------------------------------------------
+# Create Spark session
+# ---------------------------------------------------------
+
 spark = (
     SparkSession.builder
     .appName("CityScope Census Cleaning")
@@ -19,7 +29,11 @@ spark = (
     .getOrCreate()
 )
 
-# Read the raw Census dataset into a Spark DataFrame.
+
+# ---------------------------------------------------------
+# Read raw Census DP05 dataset
+# ---------------------------------------------------------
+
 census_df = (
     spark.read
     .option("header", "true")
@@ -27,22 +41,192 @@ census_df = (
     .csv("data/raw/census/ACSDP5Y2024.DP05-Data.csv")
 )
 
-# Select the fields needed by CityScope and convert demographic
-# values to appropriate data types.
+
+# ---------------------------------------------------------
+# Select and clean CityScope demographic fields
+# ---------------------------------------------------------
+
 clean_df = (
     census_df
     .select(
+
+        # Geographic identifiers
         col("GEO_ID"),
         col("NAME"),
-        expr("try_cast(DP05_0001E AS BIGINT)").alias("population"),
-        expr("try_cast(DP05_0018E AS DOUBLE)").alias("median_age"),
-        expr("try_cast(DP05_0105E AS BIGINT)").alias("housing_units")
+
+        # -------------------------------------------------
+        # Population / age
+        # -------------------------------------------------
+
+        expr(
+            "try_cast(DP05_0001E AS BIGINT)"
+        ).alias("population"),
+
+        expr(
+            "try_cast(DP05_0018E AS DOUBLE)"
+        ).alias("median_age"),
+
+        # Detailed age distribution
+        expr(
+            "try_cast(DP05_0005PE AS DOUBLE)"
+        ).alias("under_5_pct"),
+
+        expr(
+            "try_cast(DP05_0006PE AS DOUBLE)"
+        ).alias("age_5_9_pct"),
+
+        expr(
+            "try_cast(DP05_0007PE AS DOUBLE)"
+        ).alias("age_10_14_pct"),
+
+        expr(
+            "try_cast(DP05_0008PE AS DOUBLE)"
+        ).alias("age_15_19_pct"),
+
+        expr(
+            "try_cast(DP05_0009PE AS DOUBLE)"
+        ).alias("age_20_24_pct"),
+
+        expr(
+            "try_cast(DP05_0010PE AS DOUBLE)"
+        ).alias("age_25_34_pct"),
+
+        expr(
+            "try_cast(DP05_0011PE AS DOUBLE)"
+        ).alias("age_35_44_pct"),
+
+        expr(
+            "try_cast(DP05_0012PE AS DOUBLE)"
+        ).alias("age_45_54_pct"),
+
+        expr(
+            "try_cast(DP05_0013PE AS DOUBLE)"
+        ).alias("age_55_59_pct"),
+
+        expr(
+            "try_cast(DP05_0014PE AS DOUBLE)"
+        ).alias("age_60_64_pct"),
+
+        expr(
+            "try_cast(DP05_0015PE AS DOUBLE)"
+        ).alias("age_65_74_pct"),
+
+        expr(
+            "try_cast(DP05_0016PE AS DOUBLE)"
+        ).alias("age_75_84_pct"),
+
+        expr(
+            "try_cast(DP05_0017PE AS DOUBLE)"
+        ).alias("age_85_plus_pct"),
+
+        # Broader age groups
+        expr(
+            "try_cast(DP05_0019PE AS DOUBLE)"
+        ).alias("under_18_pct"),
+
+        expr(
+            "try_cast(DP05_0021PE AS DOUBLE)"
+        ).alias("age_18_plus_pct"),
+
+        expr(
+            "try_cast(DP05_0022PE AS DOUBLE)"
+        ).alias("age_21_plus_pct"),
+
+        expr(
+            "try_cast(DP05_0023PE AS DOUBLE)"
+        ).alias("age_62_plus_pct"),
+
+        expr(
+            "try_cast(DP05_0024PE AS DOUBLE)"
+        ).alias("age_65_plus_pct"),
+
+        # -------------------------------------------------
+        # Sex
+        # -------------------------------------------------
+
+        expr(
+            "try_cast(DP05_0002PE AS DOUBLE)"
+        ).alias("male_pct"),
+
+        expr(
+            "try_cast(DP05_0003PE AS DOUBLE)"
+        ).alias("female_pct"),
+
+        expr(
+            "try_cast(DP05_0004E AS DOUBLE)"
+        ).alias("sex_ratio"),
+
+        # -------------------------------------------------
+        # Race
+        # -------------------------------------------------
+
+        expr(
+            "try_cast(DP05_0037PE AS DOUBLE)"
+        ).alias("white_pct"),
+
+        expr(
+            "try_cast(DP05_0045PE AS DOUBLE)"
+        ).alias("black_pct"),
+
+        expr(
+            "try_cast(DP05_0053PE AS DOUBLE)"
+        ).alias("american_indian_alaska_native_pct"),
+
+        expr(
+            "try_cast(DP05_0061PE AS DOUBLE)"
+        ).alias("asian_pct"),
+
+        expr(
+            "try_cast(DP05_0069PE AS DOUBLE)"
+        ).alias("native_hawaiian_pacific_islander_pct"),
+
+        expr(
+            "try_cast(DP05_0074PE AS DOUBLE)"
+        ).alias("other_race_pct"),
+
+        expr(
+            "try_cast(DP05_0075PE AS DOUBLE)"
+        ).alias("two_or_more_races_pct"),
+
+        # -------------------------------------------------
+        # Hispanic / Latino
+        # -------------------------------------------------
+
+        expr(
+            "try_cast(DP05_0090PE AS DOUBLE)"
+        ).alias("hispanic_latino_pct")
     )
+
     # Remove the metadata row included in the Census CSV.
     .filter(col("GEO_ID") != "Geography")
 )
 
-# Write the cleaned Census data as Parquet 
-clean_df.write.mode("overwrite").parquet("data/processed/census_clean")
+
+# ---------------------------------------------------------
+# Write cleaned Census dataset
+# ---------------------------------------------------------
+
+clean_df.write \
+    .mode("overwrite") \
+    .parquet("data/processed/census_clean")
+
+
+# ---------------------------------------------------------
+# Display basic validation information
+# ---------------------------------------------------------
+
+print("Census cleaning complete.")
+print(f"Records written: {clean_df.count()}")
+
+print("\nCleaned Census schema:")
+clean_df.printSchema()
+
+print("\nSample records:")
+clean_df.show(5, truncate=False)
+
+
+# ---------------------------------------------------------
+# Stop Spark
+# ---------------------------------------------------------
 
 spark.stop()
