@@ -13,14 +13,13 @@ spark = (
     .master("local[4]")
     .getOrCreate()
 )
-
 spark.sparkContext.setLogLevel("WARN")
-
 
 # Read cleaned housing data.
 housing_df = (
     spark.read.parquet("data/processed/housing/")
 )
+
 
 # Normalize city and state values for dataset joins.
 housing_df = (
@@ -57,7 +56,7 @@ housing_aggregated = (
         # Average listing price.
         avg("list_price").alias("avg_list_price"),
 
-        # Median price per square foot.
+        # Price per square foot.
         expr(
             """
             percentile_approx(
@@ -78,22 +77,7 @@ housing_aggregated = (
     )
 )
 
-
 # Save city-level housing summaries as Parquet.
 housing_aggregated.write.mode("overwrite").parquet("data/processed/housing_city")
-
-
-# Display validation information.
-print("Housing aggregation complete.")
-print(f"City/state records: {housing_aggregated.count()}")
-
-print("\nSchema:")
-housing_aggregated.printSchema()
-
-print("\nSample:")
-housing_aggregated.orderBy(
-    col("property_count").desc()
-).show(10, truncate=False)
-
 
 spark.stop()

@@ -52,8 +52,6 @@ crime_city = (
 )
 
 # Write finalized parquet
-crime_city.write.mode("overwrite").parquet(
-    "data/processed/crime_city"
-)
+crime_city.write.mode("overwrite").parquet("data/processed/crime_city")
 
 spark.stop()

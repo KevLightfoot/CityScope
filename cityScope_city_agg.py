@@ -1,14 +1,8 @@
 """
-cityscope_city.py
-
-Builds the CityScope city-level analytics dataset by integrating:
-
-    Census demographics
-    Housing market statistics
-    Crime statistics
-
-The resulting Parquet dataset contains one row per verified
-Census-place / housing-city match.
+cityscope_city.py builds the CityScope city-level analytics dataset by integrating:
+Census demographics
+Housing market statistics
+Crime statistics
 """
 
 from pyspark.sql import SparkSession
@@ -28,19 +22,14 @@ spark.sparkContext.setLogLevel("WARN")
 
 
 # Read processed datasets
-census_df = spark.read.parquet(
-    "data/processed/census_clean"
-)
-
-# CityScope currently integrates Texas housing data,
+# CityScope currently only integrates Texas housing data,
 # so restrict Census data to Texas.
-census_df = census_df.filter(
+census_df = spark.read.parquet("data/processed/census_clean").filter(
     col("state_key") == "texas"
 )
 
-
-# Resolve Census places that share the same city name.
-# Prefer incorporated cities/towns over CDPs.
+# Some Census places share the same city name.
+# Prefer cities/towns over CDPs.
 place_priority = (
     when(col("place_type") == "city", 1)
     .when(col("place_type") == "town", 2)
@@ -55,6 +44,7 @@ place_window = (
     .orderBy(place_priority)
 )
 
+# Rank Census places by type
 census_df = (
     census_df
     .withColumn(
@@ -65,6 +55,7 @@ census_df = (
     .drop("place_rank")
 )
 
+# Keep key fields from housing and crime
 housing_df = (
     spark.read
     .parquet("data/processed/housing_city")
@@ -89,6 +80,7 @@ crime_df = (
     )
 )
 
+
 # Integrate Census + Housing
 # Only cities represented in BOTH datasets are included.
 cityscope = (
@@ -99,7 +91,6 @@ cityscope = (
         "inner"
     )
 )
-
 
 # Add Crime
 # Left join so a missing crime record does NOT automatically
@@ -119,7 +110,6 @@ cityscope = (
 
 
 # Select final CityScope city-level fields
-
 cityscope = cityscope.select(
     col("city_name").alias("city"),
     col("state").alias("state"),
@@ -174,54 +164,5 @@ cityscope = cityscope.select(
 
 # Write integrated CityScope dataset
 cityscope.write.mode("overwrite").parquet("data/processed/cityscope_city")
-
-
-# ---------------------------------------------------------
-# Validation
-# ---------------------------------------------------------
-
-city_count = cityscope.count()
-
-crime_count = (
-    cityscope
-    .filter(col("crime_data_available"))
-    .count()
-)
-
-print("\n========================================")
-print("CITYSCOPE CITY INTEGRATION COMPLETE")
-print("========================================")
-
-print(f"Unique Texas Census places after resolution: {census_df.count()}")
-print(f"CityScope city records: {city_count}")
-print(f"Cities with crime data: {crime_count}")
-
-if city_count > 0:
-    print(
-        f"Crime coverage: "
-        f"{(crime_count / city_count) * 100:.1f}%"
-    )
-
-print("\nSchema:")
-cityscope.printSchema()
-
-print("\nLargest cities by population:")
-cityscope.orderBy(
-    col("population").desc()
-).select(
-    "city",
-    "state",
-    "population",
-    "median_age",
-    "property_count",
-    "median_list_price",
-    "median_price_per_sqft",
-    "avg_sqft",
-    "incident_count"
-).show(15, truncate=False)
-
-# ---------------------------------------------------------
-# Stop Spark
-# ---------------------------------------------------------
 
 spark.stop()
