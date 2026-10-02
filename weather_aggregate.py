@@ -27,7 +27,7 @@ weather_year_and_month = (
 
 # Group observations by station, year, and month. 
 weather_grouped = (
-    weather_year_and_month.groupBy("station_id", "GEOID", "year", "month")
+    weather_year_and_month.groupBy("place_GEOID", "place_name", "year", "month")
 )
 
 # Calculate monthly temperature averages, recorded extremes,
