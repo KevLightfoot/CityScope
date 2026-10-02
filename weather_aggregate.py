@@ -34,44 +34,19 @@ weather_grouped = (
 # and the number of valid temperature observations for each station.
 weather_aggregated = (
     weather_grouped.agg(
-        avg(
-            when(
-                col("element") == "TMIN",
-                col("temperature_f")
-            )
-        ).alias("avg_low"),
-
-        avg(
-            when(
-                col("element") == "TAVG",
-                col("temperature_f")
-            )
-        ).alias("avg_temp"),
-
-        avg(
-            when(
-                col("element") == "TMAX",
-                col("temperature_f")
-            )
-        ).alias("avg_high"),
-
-        max(
-            when(
-                col("element") == "TMAX",
-                col("temperature_f")
-            )
-        ).alias("high"),
-
-        min(
-            when(
-                col("element") == "TMIN",
-                col("temperature_f")
-            )
-        ).alias("low"),
-
+        avg(when(col("element") == "TMIN", col("temperature_f"))).alias("avg_low"),
+        avg(when(col("element") == "TAVG", col("temperature_f"))).alias("avg_temp_observed"),
+        avg(when(col("element") == "TMAX", col("temperature_f"))).alias("avg_high"),
+        max(when(col("element") == "TMAX", col("temperature_f"))).alias("high"),
+        min(when(col("element") == "TMIN", col("temperature_f"))).alias("low"),
         count("temperature_f").alias("observation_count")
     )
- )
+    .withColumn(
+        "avg_temp",
+        (col("avg_low") + col("avg_high")) / 2
+    )
+    .drop("avg_temp_observed")
+)
 
 # Save monthly station-level climate summaries as Parquet.
 weather_aggregated.write.mode("overwrite").parquet("data/processed/weather_monthly")
