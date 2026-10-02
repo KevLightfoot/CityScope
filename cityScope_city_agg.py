@@ -3,6 +3,7 @@ cityscope_city.py builds the CityScope city-level analytics dataset by integrati
 Census demographics
 Housing market statistics
 Crime statistics
+Weather statistics
 """
 
 from pyspark.sql import SparkSession
@@ -55,7 +56,7 @@ census_df = (
     .drop("place_rank")
 )
 
-# Keep key fields from housing and crime
+# Keep key fields from housing, crime, and weather
 housing_df = (
     spark.read
     .parquet("data/processed/housing_city")
@@ -77,6 +78,21 @@ crime_df = (
         "city_key",
         "state_key",
         "incident_count"
+    )
+)
+
+weather_df = (
+    spark.read
+    .parquet("data/processed/weather_city")
+    .select(
+        "place_GEOID",
+        "place_name",
+        "avg_temp",
+        "avg_low",
+        "avg_high",
+        "recorded_high",
+        "recorded_low",
+        "months_available"
     )
 )
 
@@ -105,6 +121,22 @@ cityscope = (
     .withColumn(
         "crime_data_available",
         col("incident_count").isNotNull()
+    )
+)
+
+# Add Weather
+# Weather is optional because not every Census place currently
+# has a NOAA station within its boundary.
+cityscope = (
+    cityscope
+    .withColumn(
+        "place_GEOID",
+        col("GEO_ID").substr(10, 7)
+    )
+    .join(
+        weather_df,
+        "place_GEOID",
+        "left"
     )
 )
 
@@ -158,7 +190,15 @@ cityscope = cityscope.select(
 
     # Crime
     col("incident_count"),
-    col("crime_data_available")
+    col("crime_data_available"),
+
+    # Weather
+    col("avg_temp"),
+    col("avg_low"),
+    col("avg_high"),
+    col("recorded_high"),
+    col("recorded_low"),
+    col("months_available"),
 )
 
 
