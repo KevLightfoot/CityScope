@@ -107,6 +107,18 @@ tracts = (
     )
 )
 
+# Read processed Census Place boundaries for spatial enrichment.
+places = (
+    sedona.read
+    .format("parquet")
+    .load("data/processed/places")
+    .select(
+        "GEOID",
+        "NAME",
+        "geometry"
+    )
+)
+
 # Keep the fields required for downstream CityScope weather analysis.
 weather_observations_final = (
     weather_and_stations.select(
@@ -123,14 +135,45 @@ weather_observations_final = (
     .withColumn("point", ST_Point(col("lng"),  col("lat")))
 )
 
-# Spatially enrich weather df
+# Spatially enrich weather observations with Census tract and place boundaries.
 weather_enriched = (
-    weather_observations_final.join(
-        tracts, 
-        ST_Contains(tracts.geometry, weather_observations_final.point), 
-        "inner")
+    weather_observations_final
+    .join(
+        tracts.alias("tract"),
+        ST_Contains(
+            col("tract.geometry"),
+            col("point")
+        ),
+        "inner"
+    )
+    .select(
+        weather_observations_final["*"],
+        col("tract.GEOID").alias("tract_GEOID")
+    )
+    .join(
+        places.alias("place"),
+        ST_Contains(
+            col("place.geometry"),
+            col("point")
+        ),
+        "inner"
+    )
+    .select(
+        col("station_id"),
+        col("date"),
+        col("element"),
+        col("value"),
+        col("temperature_f"),
+        col("lat"),
+        col("lng"),
+        col("elevation"),
+        col("station_name"),
+        col("point"),
+        col("tract_GEOID"),
+        col("place.GEOID").alias("place_GEOID"),
+        col("place.NAME").alias("place_name")
+    )
 )
-
 
 
 # Final parquet write
