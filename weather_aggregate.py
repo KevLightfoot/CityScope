@@ -1,6 +1,6 @@
 """
 weather_aggregate.py aggregates cleaned weather observations into
-monthly station-level climate summaries for CityScope. 
+monthly city-level climate summaries for CityScope. 
 """
 
 from pyspark.sql import SparkSession
@@ -31,7 +31,7 @@ weather_grouped = (
 )
 
 # Calculate monthly temperature averages, recorded extremes,
-# and the number of valid temperature observations for each station.
+# and the number of valid temperature observations for each city.
 weather_aggregated = (
     weather_grouped.agg(
         avg(when(col("element") == "TMIN", col("temperature_f"))).alias("avg_low"),
@@ -50,5 +50,22 @@ weather_aggregated = (
 
 # Save monthly city-level climate summaries as Parquet.
 weather_aggregated.write.mode("overwrite").parquet("data/processed/weather_monthly")
+
+# Aggregate monthly weather data into city-level climate summaries.
+weather_city = (
+    weather_aggregated
+    .groupBy("place_GEOID", "place_name")
+    .agg(
+        avg("avg_temp").alias("avg_temp"),
+        avg("avg_low").alias("avg_low"),
+        avg("avg_high").alias("avg_high"),
+        max("high").alias("recorded_high"),
+        min("low").alias("recorded_low"),
+        count("*").alias("months_available")
+    )
+)
+
+# Save city-level climate summaries as Parquet.
+weather_city.write.mode("overwrite").parquet("data/processed/weather_city")
 
 spark.stop()
