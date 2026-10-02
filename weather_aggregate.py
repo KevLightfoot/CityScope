@@ -25,7 +25,7 @@ weather_year_and_month = (
     .withColumn("month", month(col("date")))
 )
 
-# Group observations by station, year, and month. 
+# Group observations by GEO_ID, place, year and month. 
 weather_grouped = (
     weather_year_and_month.groupBy("place_GEOID", "place_name", "year", "month")
 )
@@ -48,7 +48,7 @@ weather_aggregated = (
     .drop("avg_temp_observed")
 )
 
-# Save monthly station-level climate summaries as Parquet.
+# Save monthly city-level climate summaries as Parquet.
 weather_aggregated.write.mode("overwrite").parquet("data/processed/weather_monthly")
 
 spark.stop()
