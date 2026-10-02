@@ -91,19 +91,21 @@ stations_df = (
     )
 )
 
-# Join observations with station metadata using the station identifier.
-weather_and_stations = (
-    weather_cleaned.join(stations_df, "station_id", "inner")
-    )
 
-# Read proccessed tract data needed for spatial enrichment
+# Create station points for spatial enrichment.
+stations_with_points = (
+    stations_df
+    .withColumn("point", ST_Point(col("lng"), col("lat")))
+)
+
+# Read processed tract data needed for spatial enrichment.
 tracts = (
     sedona.read
     .format("parquet")
     .load("data/processed/tracts")
     .select(
         "GEOID",
-        "geometry" 
+        "geometry"
     )
 )
 
@@ -119,25 +121,32 @@ places = (
     )
 )
 
-# Keep the fields required for downstream CityScope weather analysis.
-weather_observations_final = (
-    weather_and_stations.select(
+# Spatially assign weather stations to Census places.
+stations_with_places = (
+    stations_with_points
+    .join(
+        places.alias("place"),
+        ST_Contains(
+            col("place.geometry"),
+            col("point")
+        ),
+        "inner"
+    )
+    .select(
         col("station_id"),
-        col("date"),
-        col("element"),
-        col("value"),
-        col("temperature_f"),
         col("lat"),
         col("lng"),
         col("elevation"),
-        col("station_name")
+        col("station_name"),
+        col("point"),
+        col("place.GEOID").alias("place_GEOID"),
+        col("place.NAME").alias("place_name")
     )
-    .withColumn("point", ST_Point(col("lng"),  col("lat")))
 )
 
-# Spatially enrich weather observations with Census tract and place boundaries.
-weather_enriched = (
-    weather_observations_final
+# Spatially assign weather stations to Census tracts.
+stations_enriched = (
+    stations_with_places
     .join(
         tracts.alias("tract"),
         ST_Contains(
@@ -147,15 +156,24 @@ weather_enriched = (
         "inner"
     )
     .select(
-        weather_observations_final["*"],
-        col("tract.GEOID").alias("tract_GEOID")
+        col("station_id"),
+        col("lat"),
+        col("lng"),
+        col("elevation"),
+        col("station_name"),
+        col("point"),
+        col("tract.GEOID").alias("tract_GEOID"),
+        col("place_GEOID"),
+        col("place_name")
     )
+)
+
+# Join the station geography back to the weather observations.
+weather_enriched = (
+    weather_cleaned
     .join(
-        places.alias("place"),
-        ST_Contains(
-            col("place.geometry"),
-            col("point")
-        ),
+        stations_enriched,
+        "station_id",
         "inner"
     )
     .select(
@@ -170,18 +188,14 @@ weather_enriched = (
         col("station_name"),
         col("point"),
         col("tract_GEOID"),
-        col("place.GEOID").alias("place_GEOID"),
-        col("place.NAME").alias("place_name")
+        col("place_GEOID"),
+        col("place_name")
     )
 )
 
-
-# Final parquet write
-weather_enriched.write.mode("overwrite").parquet("data/processed/weather_observations")
+# Final parquet write.
+weather_enriched.write.mode("overwrite").parquet(
+    "data/processed/weather_observations"
+)
 
 spark.stop()
-
-
-
-
-
