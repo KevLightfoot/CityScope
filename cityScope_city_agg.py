@@ -1,5 +1,5 @@
 """
-cityscope_city.py builds the CityScope city-level analytics dataset by integrating:
+cityScope_city_agg.py builds the CityScope city-level analytics dataset by integrating:
 Census demographics
 Housing market statistics
 Crime statistics

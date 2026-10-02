@@ -1,5 +1,5 @@
 """
-cityscope_query.py runs analytical queries on the integrated
+cityScope_query.py runs analytical queries on the integrated
 CityScope city-level dataset.
 """
 
