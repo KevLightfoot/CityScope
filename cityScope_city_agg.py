@@ -1,6 +1,6 @@
 """
 cityScope_city_agg.py builds the CityScope city-level analytics dataset by integrating:
-Census demographics
+Census demographics and employment 
 Housing market statistics
 Crime statistics
 Weather statistics
@@ -180,6 +180,29 @@ cityscope = cityscope.select(
     col("other_race_pct"),
     col("two_or_more_races_pct"),
     col("hispanic_latino_pct"),
+
+    # Employment / Labor Market
+   col("labor_force"),
+   col("employed"),
+   col("unemployed"),
+   col("unemployment_rate"),
+   col("management_business_science_arts_pct"),
+   col("service_pct"),
+   col("sales_office_pct"),
+   col("natural_resources_construction_maintenance_pct"),
+   col("production_transportation_pct"),
+
+   # Employment by Industry
+   col("construction_pct"),
+   col("manufacturing_pct"),
+   col("retail_pct"),
+   col("transportation_utilities_pct"),
+   col("information_pct"),
+   col("finance_real_estate_pct"),
+   col("professional_services_pct"),
+   col("education_healthcare_pct"),
+   col("arts_accommodation_food_pct"),
+   col("public_admin_pct"),
 
     # Housing
     col("property_count"),
