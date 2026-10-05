@@ -94,7 +94,7 @@ poi_columns = [
 
 aggregated = aggregated.withColumn(
     "poi_total_count",
-    sum(col(c) for c in poi_columns)
+    sum([col(c) for c in poi_columns])
 )
 
 # Save
