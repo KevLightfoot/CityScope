@@ -32,8 +32,8 @@ COPY (
         basic_category,
         taxonomy.primary AS category,
 
-        addresses[1].region AS state,
-
+        COALESCE(NULLIF(TRIM(addresses[1].region), ''), 'UNKNOWN') AS state,
+        
         CASE
             WHEN category IS NULL THEN 'other'
 
