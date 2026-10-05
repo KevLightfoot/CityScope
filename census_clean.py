@@ -83,7 +83,14 @@ employment_df = (
         ).alias("unemployed"),
 
         expr(
-            "try_cast(DP03_0009E AS DOUBLE)"
+            """
+            CASE
+                WHEN try_cast(DP03_0002E AS DOUBLE) > 0
+                THEN try_cast(DP03_0005E AS DOUBLE)
+                    / try_cast(DP03_0002E AS DOUBLE) * 100
+                ELSE NULL
+            END
+        """
         ).alias("unemployment_rate"),
 
         # -------------------------------------------------
