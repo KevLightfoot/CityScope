@@ -32,8 +32,69 @@ COPY (
         basic_category,
         taxonomy.primary AS category,
 
-        COALESCE(NULLIF(TRIM(addresses[1].region), ''), 'UNKNOWN') AS state,
-        
+    CASE
+        WHEN UPPER(TRIM(addresses[1].region)) IN (
+            'AL','AK','AZ','AR','CA','CO','CT','DE','FL','GA',
+            'HI','ID','IL','IN','IA','KS','KY','LA','ME','MD',
+            'MA','MI','MN','MS','MO','MT','NE','NV','NH','NJ',
+            'NM','NY','NC','ND','OH','OK','OR','PA','RI','SC',
+            'SD','TN','TX','UT','VT','VA','WA','WV','WI','WY',
+            'DC'
+        )
+            THEN UPPER(TRIM(addresses[1].region))
+
+        WHEN LOWER(TRIM(addresses[1].region)) = 'california' THEN 'CA'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'texas' THEN 'TX'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'florida' THEN 'FL'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'new york' THEN 'NY'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'north carolina' THEN 'NC'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'south carolina' THEN 'SC'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'new jersey' THEN 'NJ'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'pennsylvania' THEN 'PA'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'maryland' THEN 'MD'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'virginia' THEN 'VA'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'georgia' THEN 'GA'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'ohio' THEN 'OH'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'illinois' THEN 'IL'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'michigan' THEN 'MI'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'tennessee' THEN 'TN'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'arizona' THEN 'AZ'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'nevada' THEN 'NV'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'colorado' THEN 'CO'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'missouri' THEN 'MO'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'kentucky' THEN 'KY'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'north dakota' THEN 'ND'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'south dakota' THEN 'SD'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'west virginia' THEN 'WV'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'wisconsin' THEN 'WI'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'minnesota' THEN 'MN'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'iowa' THEN 'IA'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'kansas' THEN 'KS'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'oklahoma' THEN 'OK'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'arkansas' THEN 'AR'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'louisiana' THEN 'LA'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'mississippi' THEN 'MS'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'alabama' THEN 'AL'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'connecticut' THEN 'CT'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'massachusetts' THEN 'MA'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'rhode island' THEN 'RI'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'vermont' THEN 'VT'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'new hampshire' THEN 'NH'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'maine' THEN 'ME'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'delaware' THEN 'DE'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'new mexico' THEN 'NM'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'utah' THEN 'UT'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'montana' THEN 'MT'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'idaho' THEN 'ID'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'wyoming' THEN 'WY'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'oregon' THEN 'OR'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'washington' THEN 'WA'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'hawaii' THEN 'HI'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'alaska' THEN 'AK'
+        WHEN LOWER(TRIM(addresses[1].region)) = 'district of columbia' THEN 'DC'
+        ELSE 'UNKNOWN'
+    END AS state,        
+
         CASE
             WHEN category IS NULL THEN 'other'
 
