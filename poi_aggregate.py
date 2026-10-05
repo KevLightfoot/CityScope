@@ -3,7 +3,7 @@ from pyspark.sql.functions import col, count, expr
 from sedona.spark import SedonaContext
 
 spark = SparkSession.builder \
-    .master("local[2]") \
+    .master("local[4]") \
     .appName("CityScope_POI_Aggregation") \
     .config(
         "spark.jars.packages",
@@ -47,9 +47,13 @@ joined = pois.join(
     places,
     expr("ST_Contains(place_geometry, poi_geometry)"),
     "inner"
+).select(
+    "id",
+    "cityscope_category",
+    "place_GEOID",
+    "place_name"
 )
 
-print("JOINED POI COUNT:", joined.count())
 
 # Count POIs by city and category
 aggregated = joined.groupBy(
