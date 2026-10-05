@@ -5,6 +5,11 @@ from sedona.spark import SedonaContext
 spark = SparkSession.builder \
     .master("local[2]") \
     .appName("CityScope_POI_Aggregation") \
+    .config(
+        "spark.jars.packages",
+        "org.apache.sedona:sedona-spark-4.0_2.13:1.9.1,"
+        "org.datasyslab:geotools-wrapper:1.7.0-28.5"
+    ) \
     .getOrCreate()
 
 spark = SedonaContext.create(spark)
