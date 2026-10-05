@@ -22,11 +22,6 @@ places = spark.read.parquet("data/processed/places") \
         col("geometry").alias("place_geometry")
     )
 
-# Convert Census Place WKB to Sedona geometry
-places = places.withColumn(
-    "place_geometry",
-    expr("ST_GeomFromWKB(place_geometry)")
-)
 
 # Load nationwide POIs
 pois = spark.read.parquet("data/processed/poi") \
