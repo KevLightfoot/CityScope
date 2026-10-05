@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count, sum, expr
+from pyspark.sql.functions import col, count, expr
 from sedona.spark import SedonaContext
 
 spark = SparkSession.builder \
@@ -92,9 +92,14 @@ poi_columns = [
     if f"poi_{category}_count" in aggregated.columns
 ]
 
+total_expr = col(poi_columns[0])
+
+for c in poi_columns[1:]:
+    total_expr = total_expr + col(c)
+
 aggregated = aggregated.withColumn(
     "poi_total_count",
-    sum([col(c) for c in poi_columns])
+    total_expr
 )
 
 # Save
