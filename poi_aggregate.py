@@ -1,5 +1,5 @@
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count, expr
+from pyspark.sql.functions import col, count, expr, broadcast
 from sedona.spark import SedonaContext
 
 spark = SparkSession.builder \
@@ -76,12 +76,14 @@ categories = [
 ]
 
 # Get states with POI data
+states = ["TX"]
+'''
 states = [
     row["state"]
     for row in pois.select("state").distinct().collect()
     if row["state"] in state_fips
 ]
-
+'''
 print("STATES:", len(states))
 
 # Process each state
@@ -103,9 +105,9 @@ for state in states:
     print("POIs:", state_pois.count())
     print("PLACES:", state_places.count())
 
-    # Spatial join: POI falls inside Census Place
+# Spatial join: POI falls inside Census Place
     joined = state_pois.join(
-        state_places,
+        broadcast(state_places),
         expr("ST_Contains(place_geometry, poi_geometry)"),
         "inner"
     ).select(
