@@ -10,27 +10,87 @@ output_dir = "data/processed/neighborhood_demographics"
 
 os.makedirs(output_dir, exist_ok=True)
 
-rds_files = sorted(
-    glob.glob(f"{rds_dir}/*.rds")
+
+# Find the 147 RDS files that correspond to our 147 CDNB
+# neighborhood boundary datasets.
+shapefiles = sorted(
+    glob.glob(
+        "data/raw/neighborhoods/cdnd_data/*_onm_cleaned.shp"
+    )
 )
+
+rds_files = []
+
+for shapefile in shapefiles:
+
+    base = os.path.basename(shapefile).replace(
+        "_onm_cleaned.shp",
+        ""
+    )
+
+    rds_file = f"{rds_dir}/{base}.rds"
+
+    if os.path.exists(rds_file):
+        rds_files.append(rds_file)
+    else:
+        print("MISSING RDS:", base)
+
+rds_files = sorted(rds_files)
 
 print("RDS FILES:", len(rds_files))
 
+
 state_map = {
-    "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas",
-    "CA": "California", "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware",
-    "FL": "Florida", "GA": "Georgia", "HI": "Hawaii", "ID": "Idaho",
-    "IL": "Illinois", "IN": "Indiana", "IA": "Iowa", "KS": "Kansas",
-    "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
-    "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota",
-    "MS": "Mississippi", "MO": "Missouri", "MT": "Montana", "NE": "Nebraska",
-    "NV": "Nevada", "NH": "New Hampshire", "NJ": "New Jersey",
-    "NM": "New Mexico", "NY": "New York", "NC": "North Carolina",
-    "ND": "North Dakota", "OH": "Ohio", "OK": "Oklahoma", "OR": "Oregon",
-    "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
-    "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah",
-    "VT": "Vermont", "VA": "Virginia", "WA": "Washington",
-    "WV": "West Virginia", "WI": "Wisconsin", "WY": "Wyoming",
+    "AL": "Alabama",
+    "AK": "Alaska",
+    "AZ": "Arizona",
+    "AR": "Arkansas",
+    "CA": "California",
+    "CO": "Colorado",
+    "CT": "Connecticut",
+    "DE": "Delaware",
+    "FL": "Florida",
+    "GA": "Georgia",
+    "HI": "Hawaii",
+    "ID": "Idaho",
+    "IL": "Illinois",
+    "IN": "Indiana",
+    "IA": "Iowa",
+    "KS": "Kansas",
+    "KY": "Kentucky",
+    "LA": "Louisiana",
+    "ME": "Maine",
+    "MD": "Maryland",
+    "MA": "Massachusetts",
+    "MI": "Michigan",
+    "MN": "Minnesota",
+    "MS": "Mississippi",
+    "MO": "Missouri",
+    "MT": "Montana",
+    "NE": "Nebraska",
+    "NV": "Nevada",
+    "NH": "New Hampshire",
+    "NJ": "New Jersey",
+    "NM": "New Mexico",
+    "NY": "New York",
+    "NC": "North Carolina",
+    "ND": "North Dakota",
+    "OH": "Ohio",
+    "OK": "Oklahoma",
+    "OR": "Oregon",
+    "PA": "Pennsylvania",
+    "RI": "Rhode Island",
+    "SC": "South Carolina",
+    "SD": "South Dakota",
+    "TN": "Tennessee",
+    "TX": "Texas",
+    "UT": "Utah",
+    "VT": "Vermont",
+    "VA": "Virginia",
+    "WA": "Washington",
+    "WV": "West Virginia",
+    "WI": "Wisconsin",
+    "WY": "Wyoming",
     "DC": "District of Columbia"
 }
 
@@ -45,11 +105,13 @@ for rds_file in rds_files:
     print("READING:", city_state)
 
     r_script = f"""
-library(sf)
-
 x <- readRDS("{rds_file}")
 
-df <- st_drop_geometry(x)
+df <- as.data.frame(x)
+
+if ("geometry" %in% names(df)) {{
+    df$geometry <- NULL
+}}
 
 keep <- c(
     "nbhd_id",
@@ -124,7 +186,13 @@ for csv_file in csv_files:
     # Aggregate tract/block records into one row per CDNB neighborhood.
     grouped = (
         df.groupby(
-            ["city", "state", "state_abbr", "nbhd_id", "nbhd_name"],
+            [
+                "city",
+                "state",
+                "state_abbr",
+                "nbhd_id",
+                "nbhd_name"
+            ],
             dropna=False
         )[numeric_columns]
         .sum()
@@ -139,10 +207,12 @@ demographics = pd.concat(
     ignore_index=True
 )
 
+
 # Remove rows without a neighborhood name.
 demographics = demographics[
     demographics["nbhd_name"].notna()
 ].copy()
+
 
 # Calculate race/ethnicity percentages.
 population = demographics["pop"].replace(0, pd.NA)
@@ -179,11 +249,13 @@ demographics["two_pct"] = (
     demographics["pop_two"] / population * 100
 )
 
+
 # Save the final one-row-per-neighborhood dataset.
 demographics.to_parquet(
     f"{output_dir}/neighborhood_demographics.parquet",
     index=False
 )
+
 
 print()
 print("ROWS:", len(demographics))
