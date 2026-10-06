@@ -208,7 +208,23 @@ demographics = pd.concat(
 )
 
 
-# Remove rows without a neighborhood name.
+# Clean neighborhood names so PyArrow can write the dataset.
+demographics["nbhd_name"] = (
+    demographics["nbhd_name"]
+    .fillna("Unknown")
+    .astype(str)
+)
+
+
+# Clean IDs as strings.
+demographics["nbhd_id"] = (
+    demographics["nbhd_id"]
+    .fillna("Unknown")
+    .astype(str)
+)
+
+
+# Remove rows without a valid neighborhood name.
 demographics = demographics[
     demographics["nbhd_name"].notna()
 ].copy()
