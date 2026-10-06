@@ -69,8 +69,14 @@ weather_cleaned = (
                 ).otherwise(None)
     )
 
-
     .withColumn("date", to_date(col("date"), "yyyyMMdd"))
+)
+
+# Keep only stations with 2022 temperature observations.
+weather_stations = (
+    weather_cleaned
+    .select("station_id")
+    .distinct()
 )
 
 # Read the fixed-width NOAA station metadata file.
@@ -119,12 +125,20 @@ places_with_points = (
     )
 )
 
-# Keep weather stations in and near Texas.
-texas_stations = stations_with_points.filter(
-    (col("lat") >= 24) &
-    (col("lat") <= 38) &
-    (col("lng") >= -109) &
-    (col("lng") <= -92)
+# Keep weather stations in and near Texas that have 2022 observations.
+texas_stations = (
+    stations_with_points
+    .join(
+        weather_stations,
+        "station_id",
+        "inner"
+    )
+    .filter(
+        (col("lat") >= 24) &
+        (col("lat") <= 38) &
+        (col("lng") >= -109) &
+        (col("lng") <= -92)
+    )
 )
 
 # Find the nearest weather station for each Census Place.
