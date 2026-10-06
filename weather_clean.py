@@ -3,7 +3,7 @@ weather_clean.py cleans NOAA GHCN-Daily temperature observations and station met
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, to_date, substring, trim, when, expr, row_number
+from pyspark.sql.functions import col, to_date, substring, trim, when, expr, row_number, min, max
 from pyspark.sql.window import Window
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
 from sedona.spark import SedonaContext
@@ -132,27 +132,43 @@ places_with_points = (
     )
 )
 
-# Keep weather stations in and near Texas that have 2022 observations.
-texas_stations = (
+# Keep only weather stations with 2022 observations.
+usable_stations = (
     stations_with_points
     .join(
         weather_stations,
         "station_id",
         "inner"
     )
-    .filter(
-        (col("lat") >= 24) &
-        (col("lat") <= 38) &
-        (col("lng") >= -109) &
-        (col("lng") <= -92)
+)
+
+# Add state FIPS to Census Places.
+places_with_state = (
+    places_with_points
+    .withColumn(
+        "state_fips",
+        substring(col("GEOID"), 1, 2)
     )
 )
 
-# Find the nearest weather station for each Census Place.
-station_candidates = (
-    places_with_points
+# Build approximate state bounding boxes from Census Places.
+# The small buffer allows nearby stations across state borders.
+state_bounds = (
+    places_with_state
+    .groupBy("state_fips")
+    .agg(
+        (min(expr("ST_X(place_point)")) - 3).alias("min_lng"),
+        (max(expr("ST_X(place_point)")) + 3).alias("max_lng"),
+        (min(expr("ST_Y(place_point)")) - 3).alias("min_lat"),
+        (max(expr("ST_Y(place_point)")) + 3).alias("max_lat")
+    )
+)
+
+# Assign stations to candidate states using the bounding boxes.
+station_candidates_by_state = (
+    state_bounds
     .crossJoin(
-        texas_stations.select(
+        usable_stations.select(
             "station_id",
             "lat",
             "lng",
@@ -160,6 +176,31 @@ station_candidates = (
             "station_name",
             "point"
         )
+    )
+    .filter(
+        (col("lat") >= col("min_lat")) &
+        (col("lat") <= col("max_lat")) &
+        (col("lng") >= col("min_lng")) &
+        (col("lng") <= col("max_lng"))
+    )
+    .select(
+        "state_fips",
+        "station_id",
+        "lat",
+        "lng",
+        "elevation",
+        "station_name",
+        "point"
+    )
+)
+
+# Match each Census Place to stations in its state region.
+station_candidates = (
+    places_with_state
+    .join(
+        station_candidates_by_state,
+        "state_fips",
+        "inner"
     )
     .withColumn(
         "distance",
