@@ -88,6 +88,7 @@ shapefiles = sorted(
     )
 )
 
+
 # Temporary directory containing all neighborhoods converted to WGS84.
 normalized_dir = "/tmp/cityscope_neighborhoods_wgs84"
 
@@ -98,6 +99,7 @@ os.makedirs(normalized_dir)
 
 neighborhood_dfs = []
 failed = []
+
 
 for shapefile in shapefiles:
 
@@ -129,6 +131,18 @@ for shapefile in shapefiles:
 
     os.makedirs(city_dir)
 
+    layer_name = os.path.splitext(filename)[0]
+
+    # Convert to WGS84 and create a 0-based feature ID.
+    # CDNB nbhd_id is 1-based, so:
+    # feature 0 -> nbhd_id 1
+    # feature 1 -> nbhd_id 2
+    # etc.
+    sql = (
+        f'SELECT ROWID AS nbhd_fid, * '
+        f'FROM "{layer_name}"'
+    )
+
     result = subprocess.run(
         [
             "ogr2ogr",
@@ -136,6 +150,10 @@ for shapefile in shapefiles:
             "ESRI Shapefile",
             "-t_srs",
             "EPSG:4326",
+            "-dialect",
+            "SQLite",
+            "-sql",
+            sql,
             city_dir,
             shapefile
         ],
@@ -160,11 +178,10 @@ for shapefile in shapefiles:
         .load(normalized_shapefile)
     )
 
-    # CDNB nbhd_id corresponds to shapefile feature order:
-    # FID 0 -> nbhd_id 1, FID 1 -> nbhd_id 2, etc.
+    # GDAL created nbhd_fid before Sedona loaded the file.
     df = df.withColumn(
         "nbhd_id",
-        col("FID").cast("long") + lit(1)
+        col("nbhd_fid").cast("long") + lit(1)
     )
 
     if "nbhd" in df.columns:
