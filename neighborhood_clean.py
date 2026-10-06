@@ -111,11 +111,19 @@ for shapefile in shapefiles:
         sedona.read
         .format("shapefile")
         .load(shapefile)
-        .select(
+    )
+
+    if "nbhd" in df.columns:
+        neighborhood_col = col("nbhd")
+    else:
+        neighborhood_col = col("FID").cast("string")
+
+    df = (
+        df.select(
             lit(city).alias("city"),
             lit(state).alias("state"),
             lit(state_abbr).alias("state_abbr"),
-            col("nbhd").alias("neighborhood"),
+            neighborhood_col.alias("neighborhood"),
             col("geometry")
         )
         .filter(
