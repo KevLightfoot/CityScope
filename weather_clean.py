@@ -63,13 +63,20 @@ weather_cleaned = (
     # NOAA uses -9999 to represent missing temperature measurements.
     # Convert valid Celsius values to Fahrenheit and
     # Represent missing measurements as NULL.
-    .withColumn("temperature_f", 
-                when(col("value") != -9999,
-                    ((col("value") / 10.0) * 9/5) + 32         
-                ).otherwise(None)
+    .withColumn(
+        "temperature_f",
+        when(
+            col("value") != -9999,
+            ((col("value") / 10.0) * 9/5) + 32
+        ).otherwise(None)
     )
 
     .withColumn("date", to_date(col("date"), "yyyyMMdd"))
+
+    # Remove obviously invalid temperature observations.
+    .filter(
+        col("temperature_f").between(-10, 125)
+    )
 )
 
 # Keep only stations with 2022 temperature observations.
