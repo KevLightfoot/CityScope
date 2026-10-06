@@ -1,6 +1,8 @@
 import glob
 import os
 import re
+import shutil
+import subprocess
 
 from pyspark.sql.functions import col, lit
 from sedona.spark import SedonaContext
@@ -21,7 +23,7 @@ spark = (
 
 spark.sparkContext.setLogLevel("WARN")
 
-# Initialize Sedona
+# Initialize Sedona.
 sedona = SedonaContext.create(spark)
 
 
@@ -81,10 +83,21 @@ state_map = {
 
 
 shapefiles = sorted(
-    glob.glob("data/raw/neighborhoods/cdnd_data/*_onm_cleaned.shp")
+    glob.glob(
+        "data/raw/neighborhoods/cdnd_data/*_onm_cleaned.shp"
+    )
 )
 
+# Temporary directory containing all neighborhoods converted to WGS84.
+normalized_dir = "/tmp/cityscope_neighborhoods_wgs84"
+
+if os.path.exists(normalized_dir):
+    shutil.rmtree(normalized_dir)
+
+os.makedirs(normalized_dir)
+
 neighborhood_dfs = []
+failed = []
 
 for shapefile in shapefiles:
 
@@ -107,10 +120,44 @@ for shapefile in shapefiles:
         print("UNKNOWN STATE:", filename)
         continue
 
+    print("NORMALIZING:", city, state_abbr)
+
+    city_dir = os.path.join(
+        normalized_dir,
+        f"{city}{state_abbr}"
+    )
+
+    os.makedirs(city_dir)
+
+    result = subprocess.run(
+        [
+            "ogr2ogr",
+            "-f",
+            "ESRI Shapefile",
+            "-t_srs",
+            "EPSG:4326",
+            city_dir,
+            shapefile
+        ],
+        capture_output=True,
+        text=True
+    )
+
+    if result.returncode != 0:
+        print("FAILED:", filename)
+        print(result.stderr)
+        failed.append(filename)
+        continue
+
+    normalized_shapefile = os.path.join(
+        city_dir,
+        filename
+    )
+
     df = (
         sedona.read
         .format("shapefile")
-        .load(shapefile)
+        .load(normalized_shapefile)
     )
 
     if "nbhd" in df.columns:
@@ -135,6 +182,16 @@ for shapefile in shapefiles:
     neighborhood_dfs.append(df)
 
 
+if failed:
+    print("\nFAILED FILES:")
+    for filename in failed:
+        print(filename)
+
+    raise RuntimeError(
+        f"{len(failed)} neighborhood files failed CRS normalization."
+    )
+
+
 # Combine all city neighborhood datasets.
 neighborhoods = neighborhood_dfs[0]
 
@@ -146,5 +203,10 @@ for df in neighborhood_dfs[1:]:
 neighborhoods.write.mode("overwrite").parquet(
     "data/processed/neighborhoods"
 )
+
+
+print("\nROWS:", neighborhoods.count())
+print("CITIES:", neighborhoods.select("city").distinct().count())
+print("STATES:", neighborhoods.select("state").distinct().count())
 
 spark.stop()
