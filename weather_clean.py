@@ -3,11 +3,11 @@ weather_clean.py cleans NOAA GHCN-Daily temperature observations and station met
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, to_date, substring, trim, when
+from pyspark.sql.functions import col, to_date, substring, trim, when, expr, row_number
+from pyspark.sql.window import Window
 from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DoubleType
 from sedona.spark import SedonaContext
 from sedona.spark.sql.st_constructors import ST_Point
-from sedona.spark.sql import ST_Contains
 
 
 # Create a local Spark session using 4 worker threads.
@@ -98,17 +98,6 @@ stations_with_points = (
     .withColumn("point", ST_Point(col("lng"), col("lat")))
 )
 
-# Read processed tract data needed for spatial enrichment.
-tracts = (
-    sedona.read
-    .format("parquet")
-    .load("data/processed/tracts")
-    .select(
-        "GEOID",
-        "geometry"
-    )
-)
-
 # Read processed Census Place boundaries for spatial enrichment.
 places = (
     sedona.read
@@ -121,17 +110,52 @@ places = (
     )
 )
 
-# Spatially assign weather stations to Census places.
-stations_with_places = (
-    stations_with_points
-    .join(
-        places.alias("place"),
-        ST_Contains(
-            col("place.geometry"),
-            col("point")
-        ),
-        "inner"
+# Create a representative point for each Census Place.
+places_with_points = (
+    places
+    .withColumn(
+        "place_point",
+        expr("ST_PointOnSurface(geometry)")
     )
+)
+
+# Keep weather stations in and near Texas.
+texas_stations = stations_with_points.filter(
+    (col("lat") >= 24) &
+    (col("lat") <= 38) &
+    (col("lng") >= -109) &
+    (col("lng") <= -92)
+)
+
+# Find the nearest weather station for each Census Place.
+station_candidates = (
+    places_with_points
+    .crossJoin(
+        texas_stations.select(
+            "station_id",
+            "lat",
+            "lng",
+            "elevation",
+            "station_name",
+            "point"
+        )
+    )
+    .withColumn(
+        "distance",
+        expr("ST_DistanceSphere(place_point, point)")
+    )
+)
+
+# Keep the closest weather station for each Census Place.
+window = Window.partitionBy("GEOID").orderBy(col("distance"))
+
+nearest_stations = (
+    station_candidates
+    .withColumn(
+        "rank",
+        row_number().over(window)
+    )
+    .filter(col("rank") == 1)
     .select(
         col("station_id"),
         col("lat"),
@@ -139,40 +163,16 @@ stations_with_places = (
         col("elevation"),
         col("station_name"),
         col("point"),
-        col("place.GEOID").alias("place_GEOID"),
-        col("place.NAME").alias("place_name")
+        col("GEOID").alias("place_GEOID"),
+        col("NAME").alias("place_name")
     )
 )
 
-# Spatially assign weather stations to Census tracts.
-stations_enriched = (
-    stations_with_places
-    .join(
-        tracts.alias("tract"),
-        ST_Contains(
-            col("tract.geometry"),
-            col("point")
-        ),
-        "inner"
-    )
-    .select(
-        col("station_id"),
-        col("lat"),
-        col("lng"),
-        col("elevation"),
-        col("station_name"),
-        col("point"),
-        col("tract.GEOID").alias("tract_GEOID"),
-        col("place_GEOID"),
-        col("place_name")
-    )
-)
-
-# Join the station geography back to the weather observations.
+# Join the nearest station back to the weather observations.
 weather_enriched = (
     weather_cleaned
     .join(
-        stations_enriched,
+        nearest_stations,
         "station_id",
         "inner"
     )
@@ -187,7 +187,6 @@ weather_enriched = (
         col("elevation"),
         col("station_name"),
         col("point"),
-        col("tract_GEOID"),
         col("place_GEOID"),
         col("place_name")
     )
