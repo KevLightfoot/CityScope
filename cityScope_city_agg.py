@@ -100,6 +100,7 @@ weather_df = (
 poi_df = (
     spark.read
     .parquet("data/processed/poi_city")
+    .drop("state")
 )
 
 
