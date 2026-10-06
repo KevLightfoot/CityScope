@@ -76,14 +76,11 @@ categories = [
 ]
 
 # Get states with POI data
-states = ["TX"]
-'''
 states = [
     row["state"]
     for row in pois.select("state").distinct().collect()
     if row["state"] in state_fips
 ]
-'''
 print("STATES:", len(states))
 
 # Process each state
