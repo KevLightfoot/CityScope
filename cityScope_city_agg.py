@@ -1,6 +1,6 @@
 """
 cityScope_city_agg.py builds the CityScope city-level analytics dataset by integrating:
-Census demographics and employment 
+Census demographics and employment
 Housing market statistics
 Crime statistics
 Weather statistics
@@ -24,11 +24,11 @@ spark.sparkContext.setLogLevel("WARN")
 
 
 # Read processed datasets
-# CityScope currently only integrates Texas housing data,
-# so restrict Census data to Texas.
-census_df = spark.read.parquet("data/processed/census_clean").filter(
-    col("state_key") == "texas"
+# Census data is now nationwide.
+census_df = spark.read.parquet(
+    "data/processed/census_clean"
 )
+
 
 # Some Census places share the same city name.
 # Prefer cities/towns over CDPs.
@@ -56,6 +56,7 @@ census_df = (
     .filter(col("place_rank") == 1)
     .drop("place_rank")
 )
+
 
 # Keep key fields from housing, crime, and weather
 housing_df = (
@@ -115,6 +116,7 @@ cityscope = (
     )
 )
 
+
 # Add Crime
 # Left join so a missing crime record does NOT automatically
 # become zero incidents.
@@ -131,9 +133,10 @@ cityscope = (
     )
 )
 
+
 # Add Weather
 # Weather is optional because not every Census place currently
-# has a NOAA station within its boundary.
+# has a NOAA station assignment.
 cityscope = (
     cityscope
     .withColumn(
@@ -146,6 +149,7 @@ cityscope = (
         "left"
     )
 )
+
 
 # Add POIs
 # POI counts are optional because some Census places may have no POIs.
@@ -200,27 +204,27 @@ cityscope = cityscope.select(
     col("hispanic_latino_pct"),
 
     # Employment / Labor Market
-   col("labor_force"),
-   col("employed"),
-   col("unemployed"),
-   col("unemployment_rate"),
-   col("management_business_science_arts_pct"),
-   col("service_pct"),
-   col("sales_office_pct"),
-   col("natural_resources_construction_maintenance_pct"),
-   col("production_transportation_pct"),
+    col("labor_force"),
+    col("employed"),
+    col("unemployed"),
+    col("unemployment_rate"),
+    col("management_business_science_arts_pct"),
+    col("service_pct"),
+    col("sales_office_pct"),
+    col("natural_resources_construction_maintenance_pct"),
+    col("production_transportation_pct"),
 
-   # Employment by Industry
-   col("construction_pct"),
-   col("manufacturing_pct"),
-   col("retail_pct"),
-   col("transportation_utilities_pct"),
-   col("information_pct"),
-   col("finance_real_estate_pct"),
-   col("professional_services_pct"),
-   col("education_healthcare_pct"),
-   col("arts_accommodation_food_pct"),
-   col("public_admin_pct"),
+    # Employment by Industry
+    col("construction_pct"),
+    col("manufacturing_pct"),
+    col("retail_pct"),
+    col("transportation_utilities_pct"),
+    col("information_pct"),
+    col("finance_real_estate_pct"),
+    col("professional_services_pct"),
+    col("education_healthcare_pct"),
+    col("arts_accommodation_food_pct"),
+    col("public_admin_pct"),
 
     # Housing
     col("property_count"),
@@ -260,6 +264,8 @@ cityscope = cityscope.select(
 
 
 # Write integrated CityScope dataset
-cityscope.write.mode("overwrite").parquet("data/processed/cityscope_city")
+cityscope.write.mode("overwrite").parquet(
+    "data/processed/cityscope_city"
+)
 
 spark.stop()
