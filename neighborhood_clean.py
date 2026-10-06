@@ -1,13 +1,17 @@
-from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, when, input_file_name, regexp_extract
 from sedona.spark import SedonaContext
 
 
-# Create Spark Session
+# Create a local Spark session using 4 worker threads.
 spark = (
-    SparkSession.builder
+    SedonaContext.builder()
     .appName("CityScope Neighborhood Cleaning")
     .master("local[4]")
+    .config(
+        "spark.jars.packages",
+        "org.apache.sedona:sedona-spark-4.0_2.13:1.9.1,"
+        "org.datasyslab:geotools-wrapper:1.9.1-33.5"
+    )
     .getOrCreate()
 )
 
@@ -15,7 +19,6 @@ spark.sparkContext.setLogLevel("WARN")
 
 # Initialize Sedona
 sedona = SedonaContext.create(spark)
-
 
 # Read nationwide city-defined neighborhood shapefiles
 neighborhoods = (
@@ -59,61 +62,6 @@ neighborhoods = neighborhoods.withColumn(
     regexp_extract(col("city_state"), state_pattern, 2)
 )
 
-
-# Map state abbreviations to full state names
-state_map = {
-    "AL": "Alabama",
-    "AK": "Alaska",
-    "AZ": "Arizona",
-    "AR": "Arkansas",
-    "CA": "California",
-    "CO": "Colorado",
-    "CT": "Connecticut",
-    "DE": "Delaware",
-    "FL": "Florida",
-    "GA": "Georgia",
-    "HI": "Hawaii",
-    "ID": "Idaho",
-    "IL": "Illinois",
-    "IN": "Indiana",
-    "IA": "Iowa",
-    "KS": "Kansas",
-    "KY": "Kentucky",
-    "LA": "Louisiana",
-    "ME": "Maine",
-    "MD": "Maryland",
-    "MA": "Massachusetts",
-    "MI": "Michigan",
-    "MN": "Minnesota",
-    "MS": "Mississippi",
-    "MO": "Missouri",
-    "MT": "Montana",
-    "NE": "Nebraska",
-    "NV": "Nevada",
-    "NH": "New Hampshire",
-    "NJ": "New Jersey",
-    "NM": "New Mexico",
-    "NY": "New York",
-    "NC": "North Carolina",
-    "ND": "North Dakota",
-    "OH": "Ohio",
-    "OK": "Oklahoma",
-    "OR": "Oregon",
-    "PA": "Pennsylvania",
-    "RI": "Rhode Island",
-    "SC": "South Carolina",
-    "SD": "South Dakota",
-    "TN": "Tennessee",
-    "TX": "Texas",
-    "UT": "Utah",
-    "VT": "Vermont",
-    "VA": "Virginia",
-    "WA": "Washington",
-    "WV": "West Virginia",
-    "WI": "Wisconsin",
-    "WY": "Wyoming",
-    "DC": "District of Columbia"
-}
 
 mapping_expr = (
     when(col("state_abbr") == "AL", "Alabama")
