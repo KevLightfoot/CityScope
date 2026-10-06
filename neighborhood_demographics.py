@@ -7,6 +7,7 @@ import pandas as pd
 
 rds_dir = "data/raw/neighborhoods/rds"
 output_dir = "data/processed/neighborhood_demographics"
+boundary_path = "data/processed/neighborhoods"
 
 os.makedirs(output_dir, exist_ok=True)
 
@@ -95,6 +96,10 @@ state_map = {
 }
 
 
+# ------------------------------------------------------------------
+# Extract demographic data from each RDS file.
+# ------------------------------------------------------------------
+
 all_data = []
 
 for rds_file in rds_files:
@@ -142,7 +147,10 @@ write.csv(
     )
 
 
+# ------------------------------------------------------------------
 # Read and aggregate each city's demographic data.
+# ------------------------------------------------------------------
+
 csv_files = sorted(
     glob.glob(f"{output_dir}/*.csv")
 )
@@ -177,21 +185,35 @@ for csv_file in csv_files:
     ]
 
     for column in numeric_columns:
+
         if column in df.columns:
             df[column] = pd.to_numeric(
                 df[column],
                 errors="coerce"
             )
 
-    # Aggregate tract/block records into one row per CDNB neighborhood.
+    # Keep neighborhood IDs numeric.
+    df["nbhd_id"] = pd.to_numeric(
+        df["nbhd_id"],
+        errors="coerce"
+    )
+
+    # Remove census records that have no CDNB neighborhood ID.
+    # These are census blocks that were not assigned to a
+    # City-Defined Neighborhood.
+    df = df[
+        df["nbhd_id"].notna()
+    ].copy()
+
+    # Aggregate census block/tract records into one row per
+    # CDNB neighborhood.
     grouped = (
         df.groupby(
             [
                 "city",
                 "state",
                 "state_abbr",
-                "nbhd_id",
-                "nbhd_name"
+                "nbhd_id"
             ],
             dropna=False
         )[numeric_columns]
@@ -208,30 +230,85 @@ demographics = pd.concat(
 )
 
 
-# Clean neighborhood names so PyArrow can write the dataset.
-demographics["nbhd_name"] = (
-    demographics["nbhd_name"]
-    .fillna("Unknown")
-    .astype(str)
+# ------------------------------------------------------------------
+# Load cleaned CDNB boundaries.
+#
+# These contain the authoritative neighborhood names and IDs.
+# ------------------------------------------------------------------
+
+boundaries = pd.read_parquet(
+    boundary_path
 )
 
-
-# Clean IDs as strings.
-demographics["nbhd_id"] = (
-    demographics["nbhd_id"]
-    .fillna("Unknown")
-    .astype(str)
-)
-
-
-# Remove rows without a valid neighborhood name.
-demographics = demographics[
-    demographics["nbhd_name"].notna()
+boundaries = boundaries[
+    [
+        "city",
+        "state",
+        "state_abbr",
+        "nbhd_id",
+        "neighborhood"
+    ]
 ].copy()
 
 
+boundaries["nbhd_id"] = pd.to_numeric(
+    boundaries["nbhd_id"],
+    errors="coerce"
+)
+
+
+# Make sure there is only one boundary record per city/state/ID.
+boundaries = (
+    boundaries
+    .drop_duplicates(
+        subset=[
+            "city",
+            "state",
+            "state_abbr",
+            "nbhd_id"
+        ]
+    )
+)
+
+
+# ------------------------------------------------------------------
+# Attach neighborhood names from the cleaned boundary dataset.
+# ------------------------------------------------------------------
+
+demographics = demographics.merge(
+    boundaries,
+    on=[
+        "city",
+        "state",
+        "state_abbr",
+        "nbhd_id"
+    ],
+    how="left"
+)
+
+
+# Use the cleaned boundary name.
+# If no name exists in the boundary dataset, retain Unknown.
+demographics["nbhd_name"] = (
+    demographics["neighborhood"]
+    .fillna("Unknown")
+    .astype(str)
+)
+
+demographics.drop(
+    columns=["neighborhood"],
+    inplace=True
+)
+
+
+# ------------------------------------------------------------------
 # Calculate race/ethnicity percentages.
-population = demographics["pop"].replace(0, pd.NA)
+# ------------------------------------------------------------------
+
+population = demographics["pop"].replace(
+    0,
+    pd.NA
+)
 
 demographics["white_pct"] = (
     demographics["pop_white"] / population * 100
@@ -266,7 +343,10 @@ demographics["two_pct"] = (
 )
 
 
-# Save the final one-row-per-neighborhood dataset.
+# ------------------------------------------------------------------
+# Save final neighborhood demographic dataset.
+# ------------------------------------------------------------------
+
 demographics.to_parquet(
     f"{output_dir}/neighborhood_demographics.parquet",
     index=False
@@ -280,4 +360,11 @@ print("STATES:", demographics["state"].nunique())
 print(
     "NEIGHBORHOODS:",
     demographics["nbhd_name"].nunique()
+)
+
+print(
+    "UNKNOWN NAMES:",
+    (
+        demographics["nbhd_name"] == "Unknown"
+    ).sum()
 )
