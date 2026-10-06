@@ -23,7 +23,7 @@ sedona = SedonaContext.create(spark)
 places_df = (
     sedona.read
     .format("shapefile")
-    .load("data/raw/spatial/places/tl_2024_48_place.shp")
+    .load("data/raw/spatial/places/*_place.shp")
     .select(
         "GEOID",
         "NAME",
