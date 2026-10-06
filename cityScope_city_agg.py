@@ -4,6 +4,7 @@ Census demographics and employment
 Housing market statistics
 Crime statistics
 Weather statistics
+POI statistics
 """
 
 from pyspark.sql import SparkSession
@@ -96,6 +97,11 @@ weather_df = (
     )
 )
 
+poi_df = (
+    spark.read
+    .parquet("data/processed/poi_city")
+)
+
 
 # Integrate Census + Housing
 # Only cities represented in BOTH datasets are included.
@@ -135,6 +141,17 @@ cityscope = (
     )
     .join(
         weather_df,
+        "place_GEOID",
+        "left"
+    )
+)
+
+# Add POIs
+# POI counts are optional because some Census places may have no POIs.
+cityscope = (
+    cityscope
+    .join(
+        poi_df,
         "place_GEOID",
         "left"
     )
@@ -222,6 +239,22 @@ cityscope = cityscope.select(
     col("recorded_high"),
     col("recorded_low"),
     col("months_available"),
+
+    # POIs
+    col("poi_food_count"),
+    col("poi_grocery_count"),
+    col("poi_healthcare_count"),
+    col("poi_education_count"),
+    col("poi_shopping_count"),
+    col("poi_financial_count"),
+    col("poi_fitness_count"),
+    col("poi_recreation_count"),
+    col("poi_entertainment_count"),
+    col("poi_transportation_count"),
+    col("poi_lodging_count"),
+    col("poi_religious_count"),
+    col("poi_other_count"),
+    col("poi_total_count"),
 )
 
 
