@@ -1,5 +1,5 @@
 """
-place_clean.py cleans the 2024 Texas Census place boundaries
+place_clean.py cleans the 2024 nationwide Census place boundaries
 for use in CityScope spatial analysis.
 """
 
