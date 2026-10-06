@@ -143,6 +143,11 @@ for shapefile in shapefiles:
         f'FROM "{layer_name}"'
     )
 
+    normalized_shapefile = os.path.join(
+        city_dir,
+        filename
+    )
+
     result = subprocess.run(
         [
             "ogr2ogr",
@@ -154,7 +159,7 @@ for shapefile in shapefiles:
             "SQLite",
             "-sql",
             sql,
-            city_dir,
+            normalized_shapefile,
             shapefile
         ],
         capture_output=True,
@@ -167,11 +172,6 @@ for shapefile in shapefiles:
         failed.append(filename)
         continue
 
-    normalized_shapefile = os.path.join(
-        city_dir,
-        filename
-    )
-
     df = (
         sedona.read
         .format("shapefile")
@@ -179,6 +179,7 @@ for shapefile in shapefiles:
     )
 
     # GDAL created nbhd_fid before Sedona loaded the file.
+    # ROWID is 0-based, while CDNB nbhd_id is 1-based.
     df = df.withColumn(
         "nbhd_id",
         col("nbhd_fid").cast("long") + lit(1)
