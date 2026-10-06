@@ -160,21 +160,28 @@ for shapefile in shapefiles:
         .load(normalized_shapefile)
     )
 
+    # CDNB nbhd_id corresponds to shapefile feature order:
+    # FID 0 -> nbhd_id 1, FID 1 -> nbhd_id 2, etc.
+    df = df.withColumn(
+        "nbhd_id",
+        col("FID").cast("long") + lit(1)
+    )
+
     if "nbhd" in df.columns:
-        neighborhood_col = col("nbhd")
+        neighborhood_col = col("nbhd").cast("string")
     else:
-        neighborhood_col = col("FID").cast("string")
+        neighborhood_col = lit(None).cast("string")
 
     df = (
         df.select(
             lit(city).alias("city"),
             lit(state).alias("state"),
             lit(state_abbr).alias("state_abbr"),
+            col("nbhd_id"),
             neighborhood_col.alias("neighborhood"),
             col("geometry")
         )
         .filter(
-            col("neighborhood").isNotNull() &
             col("geometry").isNotNull()
         )
     )
