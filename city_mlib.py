@@ -26,24 +26,6 @@ cityscope = spark.read.parquet(
 )
 
 
-# Read city-level POI statistics.
-poi = spark.read.parquet(
-    "data/processed/poi_city"
-)
-
-
-# Add POI statistics using the Census Place GEOID.
-cityscope = (
-    cityscope
-    .join(
-        poi,
-        cityscope.census_geo_id == poi.place_GEOID,
-        "left"
-    )
-    .drop("place_GEOID", "place_name")
-)
-
-
 # Select the features used for city clustering.
 feature_columns = [
     "population",
