@@ -192,17 +192,21 @@ poi_candidates = (
 
 
 # Assign POIs to their actual CDNB neighborhoods.
+# Match by state/city first so each POI is only compared
+# against neighborhoods belonging to that city.
 poi_neighborhoods = (
     poi_candidates.alias("p")
     .join(
-        broadcast(neighborhood_df).alias("n"),
+        neighborhood_df.alias("n"),
         (col("p.state_abbr") == col("n.state_abbr")) &
-        (col("p.candidate_city") == col("n.city")) &
+        (col("p.candidate_city") == col("n.city")),
+        "inner"
+    )
+    .filter(
         ST_Contains(
             col("n.geometry"),
             col("p.geometry")
-        ),
-        "inner"
+        )
     )
     .select(
         col("n.city"),
