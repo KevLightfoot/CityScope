@@ -10,23 +10,24 @@ from pyspark.ml.clustering import KMeans
 from pyspark.ml.evaluation import ClusteringEvaluator
 
 
-# Create a local Spark session using 4 worker threads.
+# Create Spark Session
 spark = (
     SparkSession.builder
     .appName("CityScope City MLlib")
     .master("local[4]")
     .getOrCreate()
 )
+
 spark.sparkContext.setLogLevel("WARN")
 
 
-# Read the integrated city-level dataset.
+# Read integrated CityScope city-level data.
 cityscope = spark.read.parquet(
     "data/processed/cityscope_city"
 )
 
 
-# Select the features used for city clustering.
+# Select features for clustering.
 feature_columns = [
     "population",
     "median_age",
@@ -52,8 +53,25 @@ feature_columns = [
 ]
 
 
-# Apply log transformations to heavily skewed count and price features.
-log_columns = [
+# Replace missing numeric values with zero where appropriate.
+cityscope = cityscope.fillna(
+    0,
+    subset=[
+        "incident_count",
+        "poi_total_count",
+        "poi_food_count",
+        "poi_grocery_count",
+        "poi_healthcare_count",
+        "poi_education_count",
+        "poi_shopping_count",
+        "poi_recreation_count",
+        "poi_entertainment_count"
+    ]
+)
+
+
+# Log-transform highly skewed count and price features.
+log_features = [
     "population",
     "median_list_price",
     "median_price_per_sqft",
@@ -69,10 +87,10 @@ log_columns = [
     "poi_entertainment_count"
 ]
 
-for feature in log_columns:
+for feature in log_features:
     cityscope = cityscope.withColumn(
         f"log_{feature}",
-        log1p(coalesce(col(feature), lit(0)))
+        log1p(col(feature))
     )
 
 
@@ -102,7 +120,7 @@ model_features = [
 ]
 
 
-# Fill missing feature values using the median.
+# Impute missing feature values using the median.
 imputer = Imputer(
     inputCols=model_features,
     outputCols=[
@@ -115,7 +133,7 @@ imputer = Imputer(
 cityscope = imputer.fit(cityscope).transform(cityscope)
 
 
-# Assemble all clustering features into one vector.
+# Assemble features into a single vector.
 imputed_features = [
     f"{feature}_imputed"
     for feature in model_features
@@ -129,27 +147,28 @@ assembler = VectorAssembler(
 cityscope = assembler.transform(cityscope)
 
 
-# Standardize the feature vectors before clustering.
+# Standardize the feature vector.
 scaler = StandardScaler(
     inputCol="raw_features",
     outputCol="features",
-    withStd=True,
-    withMean=True
+    withMean=True,
+    withStd=True
 )
 
 cityscope = scaler.fit(cityscope).transform(cityscope)
 
 
-# Test multiple KMeans cluster counts.
+# Evaluate K-Means models with different cluster counts.
 evaluator = ClusteringEvaluator(
-    predictionCol="prediction",
     featuresCol="features",
+    predictionCol="prediction",
     metricName="silhouette"
 )
 
 results = []
 
 for k in range(2, 9):
+
     kmeans = KMeans(
         k=k,
         seed=42,
@@ -158,31 +177,37 @@ for k in range(2, 9):
     )
 
     model = kmeans.fit(cityscope)
+
     predictions = model.transform(cityscope)
 
     silhouette = evaluator.evaluate(predictions)
 
-    results.append(
-        (k, silhouette)
-    )
+    results.append((k, silhouette))
 
     print(
-        f"K={k} SILHOUETTE={silhouette:.4f}"
+        f"k={k} silhouette={silhouette:.4f}",
+        flush=True
     )
 
 
 # Select the cluster count with the highest silhouette score.
 best_k, best_silhouette = max(
     results,
-    key=lambda item: item[1]
+    key=lambda x: x[1]
 )
 
-print()
-print("BEST K:", best_k)
-print("BEST SILHOUETTE:", round(best_silhouette, 4))
+print(
+    f"BEST K: {best_k}",
+    flush=True
+)
+
+print(
+    f"BEST SILHOUETTE: {best_silhouette:.4f}",
+    flush=True
+)
 
 
-# Train the final KMeans model.
+# Train the final K-Means model.
 final_kmeans = KMeans(
     k=best_k,
     seed=42,
@@ -192,66 +217,37 @@ final_kmeans = KMeans(
 
 final_model = final_kmeans.fit(cityscope)
 
-
-# Add final cluster assignments.
-clustered = final_model.transform(cityscope)
+cityscope_clustered = final_model.transform(cityscope)
 
 
-# Keep the city information and cluster assignment.
-clustered = clustered.select(
+# Save city cluster assignments.
+cityscope_clustered.select(
     "city",
     "state",
     "census_geo_id",
-    "population",
-    "median_age",
-    "median_list_price",
-    "median_price_per_sqft",
-    "incident_count",
-    "avg_temp",
-    "poi_total_count",
     "cluster"
-)
-
-
-# Show the number of cities in each cluster.
-print()
-print("CITIES PER CLUSTER:")
-
-clustered.groupBy(
-    "cluster"
-).count().orderBy(
-    "cluster"
-).show()
-
-
-# Show sample clustered cities.
-print("SAMPLE CITY CLUSTERS:")
-
-clustered.orderBy(
-    "city",
-    "state"
-).show(30, False)
-
-
-# Save city cluster assignments as Parquet.
-clustered.write.mode("overwrite").parquet(
+).write.mode("overwrite").parquet(
     "data/processed/city_mllib"
 )
 
 
-# Save the cluster evaluation results.
-spark.createDataFrame(
+# Save K-Means evaluation results.
+evaluation_df = spark.createDataFrame(
     results,
     ["k", "silhouette"]
-).write.mode("overwrite").parquet(
+)
+
+evaluation_df.write.mode("overwrite").parquet(
     "data/processed/city_mllib_evaluation"
 )
 
 
-# Print the output locations.
-print("SAVED: data/processed/city_mllib")
-print("SAVED: data/processed/city_mllib_evaluation")
-print("DONE")
+# Display cluster counts.
+cityscope_clustered.groupBy(
+    "cluster"
+).count().orderBy(
+    "cluster"
+).show()
 
 
 spark.stop()
