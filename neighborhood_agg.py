@@ -67,8 +67,9 @@ demo = demo.select(*demo_cols)
 
 # Housing
 housing_cols = [
-    "listing_count",
-    "median_price",
+    "property_count",
+    "median_list_price",
+    "avg_list_price",
     "median_price_per_sqft",
     "avg_sqft"
 ]
@@ -200,9 +201,11 @@ austin.select(
     "nbhd_id",
     "nbhd_name",
     "pop",
-    "listing_count",
-    "median_price",
+    "property_count",
+    "median_list_price",
+    "avg_list_price",
     "median_price_per_sqft",
+    "avg_sqft",
     "poi_count"
 ).orderBy("nbhd_id").show(15, False)
 
@@ -219,7 +222,8 @@ ny.select(
     "nbhd_id",
     "nbhd_name",
     "pop",
-    "listing_count",
+    "property_count",
+    "median_list_price",
     "poi_count"
 ).orderBy("nbhd_id").show(10, False)
 
