@@ -91,6 +91,7 @@ similar_neighborhoods = similar_neighborhoods.filter(
     col("nbhd_name").isNotNull() &
     (col("nbhd_name") != "") &
     ~col("nbhd_name").rlike("(?i)https?://") &
+    ~col("nbhd_name").rlike("^[0-9]+$") &
     (col("distCol") <= 1.6)
 )
 
