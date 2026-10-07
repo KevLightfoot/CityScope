@@ -22,6 +22,10 @@ poi = spark.read.parquet(
     f"{BASE}/neighborhood_poi"
 )
 
+neighborhoods = spark.read.parquet(
+    f"{BASE}/neighborhoods"
+)
+
 keys = [
     "city",
     "state",
@@ -43,7 +47,6 @@ demo_cols = [
     "state",
     "state_abbr",
     "nbhd_id",
-    "nbhd_name",
     "pop",
     "pop_white",
     "pop_black",
@@ -124,6 +127,12 @@ poi = poi.select(
     *available_poi_cols
 )
 
+# Neighborhood names
+neighborhood_names = neighborhoods.select(
+    *keys,
+    col("neighborhood").alias("nbhd_name")
+).dropDuplicates(keys)
+
 # Join
 print("\n" + "=" * 70)
 print("BUILDING NEIGHBORHOOD AGGREGATE")
@@ -138,6 +147,11 @@ combined = (
     )
     .join(
         poi,
+        keys,
+        "left"
+    )
+    .join(
+        neighborhood_names,
         keys,
         "left"
     )
