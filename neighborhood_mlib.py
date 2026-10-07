@@ -281,13 +281,15 @@ austin = neighborhood_vectors.filter(
 
 if austin.count() > 0:
 
-    austin_vector = austin.collect()[0]["features"]
+    austin_row = austin.collect()[0]
+    austin_vector = austin_row["features"]
+    austin_id = austin_row["nbhd_id"]
 
     similar_neighborhoods = (
         lsh_model.approxNearestNeighbors(
             neighborhood_vectors,
             austin_vector,
-            11
+            100
         )
     )
 
@@ -295,12 +297,41 @@ if austin.count() > 0:
         ~(
             (col("city") == "Austin") &
             (col("state") == "Texas") &
-            (col("nbhd_id") == austin.collect()[0]["nbhd_id"])
+            (col("nbhd_id") == austin_id)
         ) &
         col("nbhd_name").isNotNull() &
         (col("nbhd_name") != "") &
-        ~col("nbhd_name").rlike("(?i)https?://")
-    ).limit(10)
+        ~col("nbhd_name").rlike("(?i)https?://") &
+        (col("distCol") <= 1.6)
+    )
+
+    # Keep up to three similar neighborhoods from Austin.
+    same_city = (
+        similar_neighborhoods
+        .filter(
+            (col("city") == "Austin") &
+            (col("state") == "Texas")
+        )
+        .orderBy("distCol")
+        .limit(3)
+    )
+
+    # Keep up to five similar neighborhoods from other cities.
+    other_cities = (
+        similar_neighborhoods
+        .filter(
+            ~(
+                (col("city") == "Austin") &
+                (col("state") == "Texas")
+            )
+        )
+        .orderBy("distCol")
+        .limit(5)
+    )
+
+    similar_neighborhoods = same_city.unionByName(
+        other_cities
+    )
 
     print(
         "SIMILAR NEIGHBORHOODS TO AUSTIN:",
@@ -314,7 +345,7 @@ if austin.count() > 0:
         "nbhd_id",
         "distCol"
     ).show(
-        10,
+        8,
         False
     )
 
