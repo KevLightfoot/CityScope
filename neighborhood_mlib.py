@@ -22,7 +22,7 @@ spark.sparkContext.setLogLevel("WARN")
 
 # Read integrated CityScope neighborhood-level data.
 neighborhood = spark.read.parquet(
-    "data/processed/neighborhood_agg"
+    "data/processed/neighborhood_cityscope"
 )
 
 
