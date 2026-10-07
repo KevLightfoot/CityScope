@@ -296,7 +296,10 @@ if austin.count() > 0:
             (col("city") == "Austin") &
             (col("state") == "Texas") &
             (col("nbhd_id") == austin.collect()[0]["nbhd_id"])
-        )
+        ) &
+        col("nbhd_name").isNotNull() &
+        (col("nbhd_name") != "") &
+        ~col("nbhd_name").rlike("(?i)https?://")
     ).limit(10)
 
     print(
