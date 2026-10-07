@@ -92,7 +92,10 @@ ela_df = ela_df.withColumn("ela_pct", convert_range(col("ela_raw")))
 
 grad_df = grad_df.withColumn(
     "graduation_pct",
-    regexp_replace(col("graduation_raw"), "%", "").cast("double")
+    when(
+        regexp_replace(col("graduation_raw"), "%", "").rlike(r"^\d+(\.\d+)?$"),
+        regexp_replace(col("graduation_raw"), "%", "").cast("double")
+    ).otherwise(lit(None).cast("double"))
 )
 
 
