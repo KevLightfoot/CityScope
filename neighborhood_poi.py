@@ -7,7 +7,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, count, expr, sum, upper, trim, broadcast
 
 from sedona.spark import SedonaContext
-from sedona.spark.sql import ST_Contains
+from sedona.spark.sql import ST_Contains, ST_GeomFromWKB
 
 
 # Create a local Spark session using 4 worker threads.
@@ -28,6 +28,7 @@ sedona = SedonaContext.create(spark)
 
 
 # Read cleaned POI data.
+# Read cleaned POI data.
 poi_df = (
     sedona.read.parquet("data/processed/poi/")
     .select(
@@ -39,6 +40,10 @@ poi_df = (
     )
     .filter(
         col("geometry").isNotNull()
+    )
+    .withColumn(
+        "geometry",
+        ST_GeomFromWKB(col("geometry"))
     )
     .withColumn(
         "state_abbr",
