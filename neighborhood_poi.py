@@ -40,10 +40,13 @@ sedona = SedonaContext.create(spark)
 neighborhood_df = (
     sedona.read.parquet("data/processed/neighborhoods/")
     .select(
-        "city", "state", "state_abbr",
-        "nbhd_id", "neighborhood", "geometry"
+        "city",
+        "state",
+        "state_abbr",
+        "nbhd_id",
+        "neighborhood",
+        "geometry"
     )
-    .cache()
 )
 
 
@@ -63,13 +66,21 @@ print(f"Found {len(cities)} CDNB cities.", flush=True)
 poi_df = (
     sedona.read.parquet("data/processed/poi/")
     .select(
-        "id", "geometry", "category",
-        "cityscope_category", "state"
+        "id",
+        "geometry",
+        "category",
+        "cityscope_category",
+        "state"
     )
     .filter(col("geometry").isNotNull())
-    .withColumn("geometry", ST_GeomFromWKB(col("geometry")))
-    .withColumn("state_abbr", upper(trim(col("state"))))
-    .cache()
+    .withColumn(
+        "geometry",
+        ST_GeomFromWKB(col("geometry"))
+    )
+    .withColumn(
+        "state_abbr",
+        upper(trim(col("state")))
+    )
 )
 
 print("POI dataset loaded.", flush=True)
@@ -131,7 +142,7 @@ for index, city_row in enumerate(cities, start=1):
     city_neighborhoods = neighborhood_df.filter(
         (col("city") == city) &
         (col("state_abbr") == state_abbr)
-    ).cache()
+    )
 
     neighborhood_count = city_neighborhoods.count()
 
@@ -161,18 +172,14 @@ for index, city_row in enumerate(cities, start=1):
             f"ST_Y(geometry) BETWEEN "
             f"{bounds['min_lat']} AND {bounds['max_lat']}"
         )
-    ).cache()
-
-    poi_count = city_pois.count()
-
-    print(
-        f"POIs in bounding box: {poi_count:,}",
-        flush=True
     )
 
 
     # Assign POIs to neighborhoods.
-    print("Running spatial join...", flush=True)
+    print(
+        "Running spatial join...",
+        flush=True
+    )
 
     city_matches = (
         city_pois.alias("p")
@@ -199,7 +206,10 @@ for index, city_row in enumerate(cities, start=1):
     # Build all POI metric columns.
     metric_columns = [
         sum(
-            expr(f"CASE WHEN {condition} THEN 1 ELSE 0 END")
+            expr(
+                f"CASE WHEN {condition} "
+                f"THEN 1 ELSE 0 END"
+            )
         ).alias(name)
         for name, condition in metrics
     ]
@@ -223,7 +233,9 @@ for index, city_row in enumerate(cities, start=1):
 
 
     # Write this city immediately.
-    poi_aggregated.write.mode("append").parquet(output_path)
+    poi_aggregated.write.mode("append").parquet(
+        output_path
+    )
 
     city_time = time.time() - city_start
 
@@ -232,9 +244,6 @@ for index, city_row in enumerate(cities, start=1):
         f"in {city_time / 60:.1f} minutes.",
         flush=True
     )
-
-    city_pois.unpersist()
-    city_neighborhoods.unpersist()
 
 
 # Finish.
@@ -245,8 +254,5 @@ print(
     f"{total_time / 60:.1f} minutes.",
     flush=True
 )
-
-poi_df.unpersist()
-neighborhood_df.unpersist()
 
 spark.stop()
