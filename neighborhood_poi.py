@@ -3,6 +3,8 @@ neighborhood_poi.py assigns cleaned POIs to CityScope CDNB
 neighborhoods and creates neighborhood-level POI summaries.
 """
 
+import time
+
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import (
     col,
@@ -10,9 +12,7 @@ from pyspark.sql.functions import (
     expr,
     sum,
     upper,
-    trim,
-    broadcast,
-    floor
+    trim
 )
 
 from sedona.spark import SedonaContext
@@ -40,331 +40,213 @@ sedona = SedonaContext.create(spark)
 neighborhood_df = (
     sedona.read.parquet("data/processed/neighborhoods/")
     .select(
-        "city",
-        "state",
-        "state_abbr",
-        "nbhd_id",
-        "neighborhood",
-        "geometry"
+        "city", "state", "state_abbr",
+        "nbhd_id", "neighborhood", "geometry"
     )
     .cache()
 )
 
 
-# Create city-level bounding boxes.
-city_bounds = (
+# Get the CDNB cities to process.
+cities = (
     neighborhood_df
-    .groupBy(
-        "city",
-        "state",
-        "state_abbr"
+    .select("city", "state", "state_abbr")
+    .distinct()
+    .orderBy("state_abbr", "city")
+    .collect()
+)
+
+print(f"Found {len(cities)} CDNB cities.", flush=True)
+
+
+# Read cleaned POIs once.
+poi_df = (
+    sedona.read.parquet("data/processed/poi/")
+    .select(
+        "id", "geometry", "category",
+        "cityscope_category", "state"
     )
-    .agg(
+    .filter(col("geometry").isNotNull())
+    .withColumn("geometry", ST_GeomFromWKB(col("geometry")))
+    .withColumn("state_abbr", upper(trim(col("state"))))
+    .cache()
+)
+
+print("POI dataset loaded.", flush=True)
+
+
+# Define neighborhood POI metrics.
+metrics = [
+    ("food_count", "cityscope_category = 'food'"),
+    ("grocery_count", "cityscope_category = 'grocery'"),
+    ("healthcare_count", "cityscope_category = 'healthcare'"),
+    ("education_count", "cityscope_category = 'education'"),
+    ("shopping_count", "cityscope_category = 'shopping'"),
+    ("financial_count", "cityscope_category = 'financial'"),
+    ("fitness_count", "cityscope_category = 'fitness'"),
+    ("recreation_count", "cityscope_category = 'recreation'"),
+    ("entertainment_count", "cityscope_category = 'entertainment'"),
+    ("lodging_count", "cityscope_category = 'lodging'"),
+    ("religious_count", "cityscope_category = 'religious'"),
+    ("restaurant_count", "lower(category) LIKE '%restaurant%'"),
+    ("coffee_shop_count", "lower(category) IN ('coffee_shop', 'cafe')"),
+    ("grocery_store_count", "lower(category) = 'grocery_store'"),
+    ("convenience_store_count", "lower(category) = 'convenience_store'"),
+    ("park_count", "lower(category) = 'park'"),
+    ("trail_count", "lower(category) = 'trail'"),
+    ("gym_count", "lower(category) = 'gym'"),
+    ("hospital_count", "lower(category) LIKE '%hospital%'"),
+    ("doctors_office_count", "lower(category) LIKE '%doctors_office%'"),
+    ("dental_clinic_count", "lower(category) LIKE '%dental%'"),
+    ("school_count", "lower(category) LIKE '%school%'"),
+    (
+        "college_university_count",
+        "lower(category) LIKE '%college%' OR "
+        "lower(category) LIKE '%university%'"
+    ),
+    ("museum_count", "lower(category) LIKE '%museum%'"),
+    ("gas_station_count", "lower(category) = 'gas_station'")
+]
+
+
+output_path = "data/processed/neighborhood_poi"
+total_start = time.time()
+
+
+# Process each city independently.
+for index, city_row in enumerate(cities, start=1):
+
+    city = city_row["city"]
+    state_abbr = city_row["state_abbr"]
+    city_start = time.time()
+
+    print(
+        f"\n[{index}/{len(cities)}] Processing "
+        f"{city}, {state_abbr}",
+        flush=True
+    )
+
+
+    # Get this city's neighborhoods.
+    city_neighborhoods = neighborhood_df.filter(
+        (col("city") == city) &
+        (col("state_abbr") == state_abbr)
+    ).cache()
+
+    neighborhood_count = city_neighborhoods.count()
+
+    print(
+        f"Neighborhoods: {neighborhood_count}",
+        flush=True
+    )
+
+
+    # Get the city's bounding box.
+    bounds = city_neighborhoods.agg(
         expr("min(ST_XMin(geometry))").alias("min_lng"),
         expr("max(ST_XMax(geometry))").alias("max_lng"),
         expr("min(ST_YMin(geometry))").alias("min_lat"),
         expr("max(ST_YMax(geometry))").alias("max_lat")
-    )
-)
+    ).collect()[0]
 
 
-# Get only states that actually contain CDNB cities.
-cdnb_states = [
-    row.state_abbr
-    for row in city_bounds.select("state_abbr").distinct().collect()
-]
+    # Keep only POIs inside this city's bounding box.
+    city_pois = poi_df.filter(
+        (col("state_abbr") == state_abbr) &
+        expr(
+            f"ST_X(geometry) BETWEEN "
+            f"{bounds['min_lng']} AND {bounds['max_lng']}"
+        ) &
+        expr(
+            f"ST_Y(geometry) BETWEEN "
+            f"{bounds['min_lat']} AND {bounds['max_lat']}"
+        )
+    ).cache()
+
+    poi_count = city_pois.count()
+
+    print(
+        f"POIs in bounding box: {poi_count:,}",
+        flush=True
+    )
 
 
-# Read cleaned POI data and restrict it to CDNB states.
-poi_df = (
-    sedona.read.parquet("data/processed/poi/")
-    .select(
-        "id",
-        "geometry",
-        "category",
-        "cityscope_category",
-        "state"
-    )
-    .filter(
-        col("geometry").isNotNull()
-    )
-    .withColumn(
-        "geometry",
-        ST_GeomFromWKB(col("geometry"))
-    )
-    .withColumn(
-        "state_abbr",
-        upper(trim(col("state")))
-    )
-    .filter(
-        col("state_abbr").isin(cdnb_states)
-    )
-)
+    # Assign POIs to neighborhoods.
+    print("Running spatial join...", flush=True)
 
-
-# Add a coarse geographic grid to the POIs.
-#
-# Each cell is approximately 0.1 degrees of latitude/longitude.
-# This removes most POIs before the expensive spatial join.
-poi_df = (
-    poi_df
-    .withColumn(
-        "grid_x",
-        floor(expr("ST_X(geometry) * 10"))
-    )
-    .withColumn(
-        "grid_y",
-        floor(expr("ST_Y(geometry) * 10"))
-    )
-)
-
-
-# Add grid cells covered by each CDNB city bounding box.
-city_grid = (
-    city_bounds
-    .withColumn(
-        "min_grid_x",
-        floor(col("min_lng") * 10)
-    )
-    .withColumn(
-        "max_grid_x",
-        floor(col("max_lng") * 10)
-    )
-    .withColumn(
-        "min_grid_y",
-        floor(col("min_lat") * 10)
-    )
-    .withColumn(
-        "max_grid_y",
-        floor(col("max_lat") * 10)
-    )
-)
-
-
-# Expand each city bounding box into its grid cells.
-city_grid = (
-    city_grid
-    .withColumn(
-        "grid_x",
-        expr("sequence(min_grid_x, max_grid_x)")
-    )
-    .withColumn(
-        "grid_y",
-        expr("sequence(min_grid_y, max_grid_y)")
-    )
-    .withColumn(
-        "grid_x",
-        expr("explode(grid_x)")
-    )
-    .withColumn(
-        "grid_y",
-        expr("explode(grid_y)")
-    )
-    .select(
-        "city",
-        "state",
-        "state_abbr",
-        "grid_x",
-        "grid_y"
-    )
-)
-
-
-# Match POIs to only the city grid cells they could possibly occupy.
-poi_candidates = (
-    poi_df.alias("p")
-    .join(
-        broadcast(city_grid).alias("c"),
-        (col("p.state_abbr") == col("c.state_abbr")) &
-        (col("p.grid_x") == col("c.grid_x")) &
-        (col("p.grid_y") == col("c.grid_y")),
-        "inner"
-    )
-    .select(
-        col("p.id"),
-        col("p.geometry"),
-        col("p.category"),
-        col("p.cityscope_category"),
-        col("p.state_abbr"),
-        col("c.city").alias("candidate_city")
-    )
-)
-
-
-# Assign POIs to their actual CDNB neighborhoods.
-# Match by state/city first so each POI is only compared
-# against neighborhoods belonging to that city.
-poi_neighborhoods = (
-    poi_candidates.alias("p")
-    .join(
-        neighborhood_df.alias("n"),
-        (col("p.state_abbr") == col("n.state_abbr")) &
-        (col("p.candidate_city") == col("n.city")),
-        "inner"
-    )
-    .filter(
-        ST_Contains(
-            col("n.geometry"),
-            col("p.geometry")
+    city_matches = (
+        city_pois.alias("p")
+        .join(
+            city_neighborhoods.alias("n"),
+            ST_Contains(
+                col("n.geometry"),
+                col("p.geometry")
+            ),
+            "inner"
+        )
+        .select(
+            col("n.city"),
+            col("n.state"),
+            col("n.state_abbr"),
+            col("n.nbhd_id"),
+            col("n.neighborhood"),
+            col("p.category"),
+            col("p.cityscope_category")
         )
     )
-    .select(
-        col("n.city"),
-        col("n.state"),
-        col("n.state_abbr"),
-        col("n.nbhd_id"),
-        col("n.neighborhood"),
-        col("p.category"),
-        col("p.cityscope_category")
+
+
+    # Build all POI metric columns.
+    metric_columns = [
+        sum(
+            expr(f"CASE WHEN {condition} THEN 1 ELSE 0 END")
+        ).alias(name)
+        for name, condition in metrics
+    ]
+
+
+    # Aggregate POIs by neighborhood.
+    poi_aggregated = (
+        city_matches
+        .groupBy(
+            "city",
+            "state",
+            "state_abbr",
+            "nbhd_id",
+            "neighborhood"
+        )
+        .agg(
+            count("*").alias("poi_count"),
+            *metric_columns
+        )
     )
+
+
+    # Write this city immediately.
+    poi_aggregated.write.mode("append").parquet(output_path)
+
+    city_time = time.time() - city_start
+
+    print(
+        f"Finished {city}, {state_abbr} "
+        f"in {city_time / 60:.1f} minutes.",
+        flush=True
+    )
+
+    city_pois.unpersist()
+    city_neighborhoods.unpersist()
+
+
+# Finish.
+total_time = time.time() - total_start
+
+print(
+    f"\nNeighborhood POI pipeline complete in "
+    f"{total_time / 60:.1f} minutes.",
+    flush=True
 )
 
-
-# Calculate neighborhood-level POI metrics.
-poi_aggregated = (
-    poi_neighborhoods
-    .groupBy(
-        "city",
-        "state",
-        "state_abbr",
-        "nbhd_id",
-        "neighborhood"
-    )
-    .agg(
-        count("*").alias("poi_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'food' "
-            "THEN 1 ELSE 0 END"
-        )).alias("food_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'grocery' "
-            "THEN 1 ELSE 0 END"
-        )).alias("grocery_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'healthcare' "
-            "THEN 1 ELSE 0 END"
-        )).alias("healthcare_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'education' "
-            "THEN 1 ELSE 0 END"
-        )).alias("education_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'shopping' "
-            "THEN 1 ELSE 0 END"
-        )).alias("shopping_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'financial' "
-            "THEN 1 ELSE 0 END"
-        )).alias("financial_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'fitness' "
-            "THEN 1 ELSE 0 END"
-        )).alias("fitness_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'recreation' "
-            "THEN 1 ELSE 0 END"
-        )).alias("recreation_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'entertainment' "
-            "THEN 1 ELSE 0 END"
-        )).alias("entertainment_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'lodging' "
-            "THEN 1 ELSE 0 END"
-        )).alias("lodging_count"),
-
-        sum(expr(
-            "CASE WHEN cityscope_category = 'religious' "
-            "THEN 1 ELSE 0 END"
-        )).alias("religious_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) LIKE '%restaurant%' "
-            "THEN 1 ELSE 0 END"
-        )).alias("restaurant_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) IN ('coffee_shop', 'cafe') "
-            "THEN 1 ELSE 0 END"
-        )).alias("coffee_shop_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) = 'grocery_store' "
-            "THEN 1 ELSE 0 END"
-        )).alias("grocery_store_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) = 'convenience_store' "
-            "THEN 1 ELSE 0 END"
-        )).alias("convenience_store_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) = 'park' "
-            "THEN 1 ELSE 0 END"
-        )).alias("park_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) = 'trail' "
-            "THEN 1 ELSE 0 END"
-        )).alias("trail_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) = 'gym' "
-            "THEN 1 ELSE 0 END"
-        )).alias("gym_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) LIKE '%hospital%' "
-            "THEN 1 ELSE 0 END"
-        )).alias("hospital_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) LIKE '%doctors_office%' "
-            "THEN 1 ELSE 0 END"
-        )).alias("doctors_office_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) LIKE '%dental%' "
-            "THEN 1 ELSE 0 END"
-        )).alias("dental_clinic_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) LIKE '%school%' "
-            "THEN 1 ELSE 0 END"
-        )).alias("school_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) LIKE '%college%' OR "
-            "lower(category) LIKE '%university%' "
-            "THEN 1 ELSE 0 END"
-        )).alias("college_university_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) LIKE '%museum%' "
-            "THEN 1 ELSE 0 END"
-        )).alias("museum_count"),
-
-        sum(expr(
-            "CASE WHEN lower(category) = 'gas_station' "
-            "THEN 1 ELSE 0 END"
-        )).alias("gas_station_count")
-    )
-)
-
-
-# Save neighborhood-level POI summaries as Parquet.
-poi_aggregated.write.mode("overwrite").parquet(
-    "data/processed/neighborhood_poi"
-)
+poi_df.unpersist()
+neighborhood_df.unpersist()
 
 spark.stop()
