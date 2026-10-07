@@ -1,6 +1,6 @@
 """
-city_mllib.py uses Spark MLlib to identify cities that are similar
-based on demographic, housing, crime, weather, and POI characteristics.
+city_mllib.py uses Spark MLlib to create nationwide city feature vectors
+and an approximate nearest-neighbor similarity model.
 """
 
 from pyspark.sql import SparkSession
@@ -129,7 +129,11 @@ imputer = Imputer(
     strategy="median"
 )
 
-cityscope = imputer.fit(cityscope).transform(cityscope)
+cityscope = imputer.fit(
+    cityscope
+).transform(
+    cityscope
+)
 
 
 # Assemble features into a single vector.
@@ -143,7 +147,9 @@ assembler = VectorAssembler(
     outputCol="raw_features"
 )
 
-cityscope = assembler.transform(cityscope)
+cityscope = assembler.transform(
+    cityscope
+)
 
 
 # Standardize the feature vector.
@@ -154,9 +160,13 @@ scaler = StandardScaler(
     withStd=True
 )
 
-scaler_model = scaler.fit(cityscope)
+scaler_model = scaler.fit(
+    cityscope
+)
 
-cityscope = scaler_model.transform(cityscope)
+cityscope = scaler_model.transform(
+    cityscope
+)
 
 
 # Reduce the feature space using PCA.
@@ -166,9 +176,13 @@ pca = PCA(
     outputCol="features"
 )
 
-pca_model = pca.fit(cityscope)
+pca_model = pca.fit(
+    cityscope
+)
 
-cityscope = pca_model.transform(cityscope)
+cityscope = pca_model.transform(
+    cityscope
+)
 
 
 # Keep the city information and MLlib feature vector.
@@ -189,11 +203,15 @@ lsh = BucketedRandomProjectionLSH(
     seed=42
 )
 
-lsh_model = lsh.fit(city_vectors)
+lsh_model = lsh.fit(
+    city_vectors
+)
 
 
 # Save the city feature vectors.
-city_vectors.write.mode("overwrite").parquet(
+city_vectors.write.mode(
+    "overwrite"
+).parquet(
     "data/processed/city_similarity_vectors"
 )
 
@@ -221,48 +239,11 @@ pca_variance = spark.createDataFrame(
     ]
 )
 
-pca_variance.write.mode("overwrite").parquet(
+pca_variance.write.mode(
+    "overwrite"
+).parquet(
     "data/processed/city_similarity_pca"
 )
-
-
-# Find example similar cities for Austin.
-austin = city_vectors.filter(
-    (col("city") == "Austin") &
-    (col("state") == "Texas")
-).limit(1)
-
-
-if austin.count() > 0:
-
-    austin_vector = austin.collect()[0]["features"]
-
-    similar_cities = lsh_model.approxNearestNeighbors(
-        city_vectors,
-        austin_vector,
-        11
-    )
-
-    similar_cities = similar_cities.filter(
-        ~(
-            (col("city") == "Austin") &
-            (col("state") == "Texas")
-        )
-    ).limit(10)
-
-    print(
-        "SIMILAR CITIES TO AUSTIN:",
-        flush=True
-    )
-
-    similar_cities.select(
-        "city",
-        "state",
-        "distCol"
-    ).show(
-        10,
-        False
-    )
 
 
 print(
