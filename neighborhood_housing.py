@@ -5,11 +5,12 @@ housing summaries.
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, avg, count, expr, when, trim
+from pyspark.sql.functions import (
+    col, avg, count, expr, when, trim, broadcast
+)
 
 from sedona.spark import SedonaContext
 from sedona.spark.sql import ST_Contains
-
 
 
 # Create a local Spark session using 4 worker threads.
@@ -46,6 +47,10 @@ housing_df = (
         col("list_price").isNotNull() &
         (col("list_price") > 0)
     )
+    .withColumn(
+        "state_abbr",
+        trim(col("state"))
+    )
 )
 
 
@@ -63,18 +68,50 @@ neighborhood_df = (
 )
 
 
-# Normalize housing state abbreviations.
-housing_df = (
-    housing_df
-    .withColumn(
-        "state_abbr",
-        trim(col("state"))
+# Create city-level bounding boxes from CDNB neighborhoods.
+city_bounds = (
+    neighborhood_df
+    .groupBy(
+        "city",
+        "state",
+        "state_abbr"
+    )
+    .agg(
+        expr("min(ST_XMin(geometry))").alias("min_lng"),
+        expr("max(ST_XMax(geometry))").alias("max_lng"),
+        expr("min(ST_YMin(geometry))").alias("min_lat"),
+        expr("max(ST_YMax(geometry))").alias("max_lat")
     )
 )
 
-# Create housing point geometries.
-housing_df = (
-    housing_df
+
+# Keep only housing listings that fall inside a CDNB city bounding box.
+housing_candidates = (
+    housing_df.alias("h")
+    .join(
+        broadcast(city_bounds).alias("c"),
+        (col("h.state_abbr") == col("c.state_abbr")) &
+        (col("h.lng") >= col("c.min_lng")) &
+        (col("h.lng") <= col("c.max_lng")) &
+        (col("h.lat") >= col("c.min_lat")) &
+        (col("h.lat") <= col("c.max_lat")),
+        "inner"
+    )
+    .select(
+        col("h.id"),
+        col("h.state_abbr"),
+        col("h.lat"),
+        col("h.lng"),
+        col("h.list_price"),
+        col("h.sqft"),
+        col("c.city").alias("candidate_city")
+    )
+)
+
+
+# Create point geometries only for housing listings near CDNB cities.
+housing_candidates = (
+    housing_candidates
     .withColumn(
         "point",
         expr("ST_Point(lng, lat)")
@@ -82,12 +119,13 @@ housing_df = (
 )
 
 
-# Assign each housing listing to a CDNB neighborhood.
+# Assign housing listings to their actual CDNB neighborhoods.
 housing_neighborhoods = (
-    housing_df.alias("h")
+    housing_candidates.alias("h")
     .join(
         neighborhood_df.alias("n"),
         (col("h.state_abbr") == col("n.state_abbr")) &
+        (col("h.candidate_city") == col("n.city")) &
         ST_Contains(
             col("n.geometry"),
             col("h.point")
