@@ -114,19 +114,26 @@ education = math_df.drop("math_raw") \
 # Create composite school quality score
 education = education.withColumn(
     "school_quality_score",
-    round(
-        (
-            when(col("math_pct").isNotNull(), col("math_pct")).otherwise(lit(0)) +
-            when(col("ela_pct").isNotNull(), col("ela_pct")).otherwise(lit(0)) +
-            when(col("graduation_pct").isNotNull(), col("graduation_pct")).otherwise(lit(0))
-        ) /
+    when(
         (
             when(col("math_pct").isNotNull(), lit(1)).otherwise(lit(0)) +
             when(col("ela_pct").isNotNull(), lit(1)).otherwise(lit(0)) +
             when(col("graduation_pct").isNotNull(), lit(1)).otherwise(lit(0))
-        ),
-        2
-    )
+        ) > 0,
+        round(
+            (
+                when(col("math_pct").isNotNull(), col("math_pct")).otherwise(lit(0)) +
+                when(col("ela_pct").isNotNull(), col("ela_pct")).otherwise(lit(0)) +
+                when(col("graduation_pct").isNotNull(), col("graduation_pct")).otherwise(lit(0))
+            ) /
+            (
+                when(col("math_pct").isNotNull(), lit(1)).otherwise(lit(0)) +
+                when(col("ela_pct").isNotNull(), lit(1)).otherwise(lit(0)) +
+                when(col("graduation_pct").isNotNull(), lit(1)).otherwise(lit(0))
+            ),
+            2
+        )
+    ).otherwise(lit(None).cast("double"))
 )
 
 
