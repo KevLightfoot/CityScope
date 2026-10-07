@@ -1,3 +1,7 @@
+"""
+poi_aggregate.py assigns nationwide POIs to Census Places and
+creates city-level POI category summaries.
+"""
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, count, expr, broadcast
 from sedona.spark import SedonaContext

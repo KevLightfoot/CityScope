@@ -1,3 +1,7 @@
+"""
+neighborhood_demographics.py aggregates demographic data into
+CityScope CDNB neighborhood-level population and race/ethnicity summaries.
+"""
 import glob
 import os
 import subprocess

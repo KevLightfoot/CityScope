@@ -1,3 +1,7 @@
+"""
+poi_clean.py cleans and standardizes nationwide Overture POI data
+for CityScope and creates broad POI category classifications.
+"""
 import duckdb
 import os
 

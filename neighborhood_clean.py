@@ -1,10 +1,14 @@
+"""
+neighborhood_clean.py cleans and standardizes CityScope CDNB
+neighborhood boundary data into a consistent WGS84 format.
+"""
 import glob
 import os
 import re
 import shutil
 import subprocess
 
-from pyspark.sql.functions import col, lit
+from pyspark.sql.functions import col, lit, when
 from sedona.spark import SedonaContext
 
 
@@ -185,10 +189,100 @@ for shapefile in shapefiles:
         col("nbhd_fid").cast("long") + lit(1)
     )
 
+
     if "nbhd" in df.columns:
         neighborhood_col = col("nbhd").cast("string")
     else:
         neighborhood_col = lit(None).cast("string")
+
+    # New York CDNB does not contain neighborhood names.
+    # Its 71 polygons correspond to NYC's 59 Community Districts
+    # and 12 Joint Interest Areas.
+    if city == "NewYork":
+        nyc_names = {
+            1: "Bronx Community District 6",
+            2: "Queens Community District 4",
+            3: "Brooklyn Community District 4",
+            4: "Bronx Community District 5",
+            5: "Bronx Community District 7",
+            6: "Bronx Community District 8",
+            7: "JFK International Airport",
+            8: "Brooklyn Community District 3",
+            9: "Queens Community District 12",
+            10: "Manhattan Community District 7",
+            11: "Queens Community District 3",
+            12: "Brooklyn Community District 9",
+            13: "LaGuardia Airport",
+            14: "Queens Community District 1",
+            15: "Bronx Community District 10",
+            16: "Pelham Bay Park",
+            17: "Bronx Park",
+            18: "Manhattan Community District 4",
+            19: "Brooklyn Community District 8",
+            20: "Prospect Park",
+            21: "Brooklyn Community District 16",
+            22: "Brooklyn Community District 17",
+            23: "Brooklyn Community District 11",
+            24: "Staten Island Gateway National Recreational Area",
+            25: "Van Cortlandt Park",
+            26: "Queens Community District 10",
+            27: "Manhattan Community District 12",
+            28: "Manhattan Community District 5",
+            29: "Manhattan Community District 8",
+            30: "Central Park",
+            31: "Manhattan Community District 9",
+            32: "Manhattan Community District 10",
+            33: "Brooklyn Community District 5",
+            34: "Manhattan Community District 2",
+            35: "Manhattan Community District 3",
+            36: "Queens Community District 9",
+            37: "Manhattan Community District 1",
+            38: "Bronx Community District 11",
+            39: "Bronx Community District 12",
+            40: "Brooklyn Community District 10",
+            41: "Queens Community District 14",
+            42: "Queens Gateway National Recreational Area",
+            43: "Staten Island Community District 3",
+            44: "Queens Community District 2",
+            45: "Queens Community District 5",
+            46: "Manhattan Community District 6",
+            47: "Brooklyn Community District 1",
+            48: "Queens Community District 7",
+            49: "Queens Community District 11",
+            50: "Queens Community District 13",
+            51: "Forest Park",
+            52: "Brooklyn Community District 18",
+            53: "Brooklyn Gateway National Recreational Area",
+            54: "Brooklyn Community District 12",
+            55: "Brooklyn Community District 14",
+            56: "Brooklyn Community District 13",
+            57: "Brooklyn Community District 15",
+            58: "Queens Community District 6",
+            59: "Brooklyn Community District 7",
+            60: "Queens Community District 8",
+            61: "Flushing Meadows-Corona Park",
+            62: "Brooklyn Community District 2",
+            63: "Brooklyn Community District 6",
+            64: "Staten Island Community District 1",
+            65: "Staten Island Community District 2",
+            66: "Bronx Community District 2",
+            67: "Bronx Community District 9",
+            68: "Manhattan Community District 11",
+            69: "Bronx Community District 1",
+            70: "Bronx Community District 3",
+            71: "Bronx Community District 4"
+        }
+
+        neighborhood_col = when(
+            col("nbhd_id").isin(list(nyc_names.keys())),
+            col("nbhd_id").cast("string")
+        )
+
+        for nbhd_id, name in nyc_names.items():
+            neighborhood_col = when(
+                col("nbhd_id") == nbhd_id,
+                lit(name)
+            ).otherwise(neighborhood_col)
 
     df = (
         df.select(
@@ -205,7 +299,6 @@ for shapefile in shapefiles:
     )
 
     neighborhood_dfs.append(df)
-
 
 if failed:
     print("\nFAILED FILES:")
