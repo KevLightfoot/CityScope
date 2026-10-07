@@ -4,7 +4,16 @@ neighborhoods and creates neighborhood-level POI summaries.
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, count, expr, sum, upper, trim, broadcast
+from pyspark.sql.functions import (
+    col,
+    count,
+    expr,
+    sum,
+    upper,
+    trim,
+    broadcast,
+    floor
+)
 
 from sedona.spark import SedonaContext
 from sedona.spark.sql import ST_Contains, ST_GeomFromWKB
@@ -27,8 +36,46 @@ spark.sparkContext.setLogLevel("WARN")
 sedona = SedonaContext.create(spark)
 
 
-# Read cleaned POI data.
-# Read cleaned POI data.
+# Read cleaned CDNB neighborhood boundaries.
+neighborhood_df = (
+    sedona.read.parquet("data/processed/neighborhoods/")
+    .select(
+        "city",
+        "state",
+        "state_abbr",
+        "nbhd_id",
+        "neighborhood",
+        "geometry"
+    )
+    .cache()
+)
+
+
+# Create city-level bounding boxes.
+city_bounds = (
+    neighborhood_df
+    .groupBy(
+        "city",
+        "state",
+        "state_abbr"
+    )
+    .agg(
+        expr("min(ST_XMin(geometry))").alias("min_lng"),
+        expr("max(ST_XMax(geometry))").alias("max_lng"),
+        expr("min(ST_YMin(geometry))").alias("min_lat"),
+        expr("max(ST_YMax(geometry))").alias("max_lat")
+    )
+)
+
+
+# Get only states that actually contain CDNB cities.
+cdnb_states = [
+    row.state_abbr
+    for row in city_bounds.select("state_abbr").distinct().collect()
+]
+
+
+# Read cleaned POI data and restrict it to CDNB states.
 poi_df = (
     sedona.read.parquet("data/processed/poi/")
     .select(
@@ -49,51 +96,88 @@ poi_df = (
         "state_abbr",
         upper(trim(col("state")))
     )
+    .filter(
+        col("state_abbr").isin(cdnb_states)
+    )
 )
 
 
-# Read cleaned CDNB neighborhood boundaries.
-neighborhood_df = (
-    sedona.read.parquet("data/processed/neighborhoods/")
+# Add a coarse geographic grid to the POIs.
+#
+# Each cell is approximately 0.1 degrees of latitude/longitude.
+# This removes most POIs before the expensive spatial join.
+poi_df = (
+    poi_df
+    .withColumn(
+        "grid_x",
+        floor(expr("ST_X(geometry) * 10"))
+    )
+    .withColumn(
+        "grid_y",
+        floor(expr("ST_Y(geometry) * 10"))
+    )
+)
+
+
+# Add grid cells covered by each CDNB city bounding box.
+city_grid = (
+    city_bounds
+    .withColumn(
+        "min_grid_x",
+        floor(col("min_lng") * 10)
+    )
+    .withColumn(
+        "max_grid_x",
+        floor(col("max_lng") * 10)
+    )
+    .withColumn(
+        "min_grid_y",
+        floor(col("min_lat") * 10)
+    )
+    .withColumn(
+        "max_grid_y",
+        floor(col("max_lat") * 10)
+    )
+)
+
+
+# Expand each city bounding box into its grid cells.
+city_grid = (
+    city_grid
+    .withColumn(
+        "grid_x",
+        expr("sequence(min_grid_x, max_grid_x)")
+    )
+    .withColumn(
+        "grid_y",
+        expr("sequence(min_grid_y, max_grid_y)")
+    )
+    .withColumn(
+        "grid_x",
+        expr("explode(grid_x)")
+    )
+    .withColumn(
+        "grid_y",
+        expr("explode(grid_y)")
+    )
     .select(
         "city",
         "state",
         "state_abbr",
-        "nbhd_id",
-        "neighborhood",
-        "geometry"
-    )
-    .cache()
-)
-
-
-# Create city-level bounding boxes from CDNB neighborhoods.
-city_bounds = (
-    neighborhood_df
-    .groupBy(
-        "city",
-        "state",
-        "state_abbr"
-    )
-    .agg(
-        expr("min(ST_XMin(geometry))").alias("min_lng"),
-        expr("max(ST_XMax(geometry))").alias("max_lng"),
-        expr("min(ST_YMin(geometry))").alias("min_lat"),
-        expr("max(ST_YMax(geometry))").alias("max_lat")
+        "grid_x",
+        "grid_y"
     )
 )
 
 
-# Keep only POIs inside CDNB city bounding boxes.
+# Match POIs to only the city grid cells they could possibly occupy.
 poi_candidates = (
     poi_df.alias("p")
     .join(
-        broadcast(city_bounds).alias("c"),
+        broadcast(city_grid).alias("c"),
         (col("p.state_abbr") == col("c.state_abbr")) &
-        (expr("ST_X(p.geometry)") >= col("c.min_lng")) &
-        (expr("ST_X(p.geometry)") <= col("c.max_lng")) &
-        (expr("ST_Y(p.geometry)") >= col("c.min_lat")) &
-        (expr("ST_Y(p.geometry)") <= col("c.max_lat")),
+        (col("p.grid_x") == col("c.grid_x")) &
+        (col("p.grid_y") == col("c.grid_y")),
         "inner"
     )
     .select(
