@@ -70,8 +70,12 @@ def convert_range(column):
     return (
         when(cleaned.startswith("<="),
              regexp_replace(cleaned, "<=", "").cast("double") / 2)
+        .when(cleaned.startswith("<"),
+             regexp_replace(cleaned, "<", "").cast("double") / 2)
         .when(cleaned.startswith(">="),
-              regexp_replace(cleaned, ">=", "").cast("double"))
+             regexp_replace(cleaned, ">=", "").cast("double"))
+        .when(cleaned.startswith(">"),
+             regexp_replace(cleaned, ">", "").cast("double"))
         .when(cleaned.contains("-"),
               (
                   regexp_replace(cleaned, "-.*", "").cast("double") +
