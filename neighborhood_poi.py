@@ -195,7 +195,7 @@ poi_candidates = (
 poi_neighborhoods = (
     poi_candidates.alias("p")
     .join(
-        neighborhood_df.alias("n"),
+        broadcast(neighborhood_df).alias("n"),
         (col("p.state_abbr") == col("n.state_abbr")) &
         (col("p.candidate_city") == col("n.city")) &
         ST_Contains(
