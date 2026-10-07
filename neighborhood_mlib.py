@@ -1,6 +1,6 @@
 """
-neighborhood_mllib.py uses Spark MLlib to identify neighborhoods that are
-similar based on demographic, housing, and POI characteristics.
+neighborhood_mllib.py uses Spark MLlib to create nationwide neighborhood
+feature vectors and an approximate nearest-neighbor similarity model.
 """
 
 from pyspark.sql import SparkSession
@@ -270,84 +270,6 @@ pca_variance.write.mode(
 ).parquet(
     "data/processed/neighborhood_similarity_pca"
 )
-
-
-# Find example similar neighborhoods for Austin.
-austin = neighborhood_vectors.filter(
-    (col("city") == "Austin") &
-    (col("state") == "Texas")
-).limit(1)
-
-
-if austin.count() > 0:
-
-    austin_row = austin.collect()[0]
-    austin_vector = austin_row["features"]
-    austin_id = austin_row["nbhd_id"]
-
-    similar_neighborhoods = (
-        lsh_model.approxNearestNeighbors(
-            neighborhood_vectors,
-            austin_vector,
-            100
-        )
-    )
-
-    similar_neighborhoods = similar_neighborhoods.filter(
-        ~(
-            (col("city") == "Austin") &
-            (col("state") == "Texas") &
-            (col("nbhd_id") == austin_id)
-        ) &
-        col("nbhd_name").isNotNull() &
-        (col("nbhd_name") != "") &
-        ~col("nbhd_name").rlike("(?i)https?://") &
-        (col("distCol") <= 1.6)
-    )
-
-    # Keep up to three similar neighborhoods from Austin.
-    same_city = (
-        similar_neighborhoods
-        .filter(
-            (col("city") == "Austin") &
-            (col("state") == "Texas")
-        )
-        .orderBy("distCol")
-        .limit(3)
-    )
-
-    # Keep up to five similar neighborhoods from other cities.
-    other_cities = (
-        similar_neighborhoods
-        .filter(
-            ~(
-                (col("city") == "Austin") &
-                (col("state") == "Texas")
-            )
-        )
-        .orderBy("distCol")
-        .limit(5)
-    )
-
-    similar_neighborhoods = same_city.unionByName(
-        other_cities
-    )
-
-    print(
-        "SIMILAR NEIGHBORHOODS TO AUSTIN:",
-        flush=True
-    )
-
-    similar_neighborhoods.select(
-        "city",
-        "state",
-        "nbhd_name",
-        "nbhd_id",
-        "distCol"
-    ).show(
-        8,
-        False
-    )
 
 
 print(
