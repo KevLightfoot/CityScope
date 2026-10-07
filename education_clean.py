@@ -68,20 +68,22 @@ def convert_range(column):
     cleaned = regexp_replace(column, "%", "")
 
     return (
-        when(cleaned.startswith("<="),
+        when(cleaned.rlike(r"^<=\d+(\.\d+)?$"),
              regexp_replace(cleaned, "<=", "").cast("double") / 2)
-        .when(cleaned.startswith("<"),
-             regexp_replace(cleaned, "<", "").cast("double") / 2)
-        .when(cleaned.startswith(">="),
-             regexp_replace(cleaned, ">=", "").cast("double"))
-        .when(cleaned.startswith(">"),
-             regexp_replace(cleaned, ">", "").cast("double"))
-        .when(cleaned.contains("-"),
+        .when(cleaned.rlike(r"^<\d+(\.\d+)?$"),
+              regexp_replace(cleaned, "<", "").cast("double") / 2)
+        .when(cleaned.rlike(r"^>=\d+(\.\d+)?$"),
+              regexp_replace(cleaned, ">=", "").cast("double"))
+        .when(cleaned.rlike(r"^>\d+(\.\d+)?$"),
+              regexp_replace(cleaned, ">", "").cast("double"))
+        .when(cleaned.rlike(r"^\d+(\.\d+)?-\d+(\.\d+)?$"),
               (
                   regexp_replace(cleaned, "-.*", "").cast("double") +
                   regexp_replace(cleaned, ".*-", "").cast("double")
               ) / 2)
-        .otherwise(cleaned.cast("double"))
+        .when(cleaned.rlike(r"^\d+(\.\d+)?$"),
+              cleaned.cast("double"))
+        .otherwise(lit(None).cast("double"))
     )
 
 
