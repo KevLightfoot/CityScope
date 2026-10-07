@@ -215,7 +215,7 @@ neighborhood_vectors = neighborhood.select(
     "state",
     "state_abbr",
     "nbhd_id",
-    "neighborhood",
+    "nbhd_name",
     "features"
 ).cache()
 
@@ -307,7 +307,7 @@ if austin.count() > 0:
     similar_neighborhoods.select(
         "city",
         "state",
-        "neighborhood",
+        "nbhd_name",
         "nbhd_id",
         "distCol"
     ).show(
