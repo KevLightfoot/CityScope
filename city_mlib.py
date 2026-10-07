@@ -1,19 +1,18 @@
 """
-city_mllib.py uses Spark MLlib to cluster CityScope cities based on
-demographic, housing, crime, weather, and POI characteristics.
+city_mllib.py uses Spark MLlib to identify cities that are similar
+based on demographic, housing, crime, weather, and POI characteristics.
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, log1p, coalesce, lit
-from pyspark.ml.feature import VectorAssembler, StandardScaler, Imputer
-from pyspark.ml.clustering import KMeans
-from pyspark.ml.evaluation import ClusteringEvaluator
+from pyspark.sql.functions import col, log1p
+from pyspark.ml.feature import VectorAssembler, StandardScaler, Imputer, PCA
+from pyspark.ml.feature import BucketedRandomProjectionLSH
 
 
 # Create Spark Session
 spark = (
     SparkSession.builder
-    .appName("CityScope City MLlib")
+    .appName("CityScope City Similarity MLlib")
     .master("local[4]")
     .getOrCreate()
 )
@@ -27,7 +26,7 @@ cityscope = spark.read.parquet(
 )
 
 
-# Select features for clustering.
+# Features used to represent city characteristics.
 feature_columns = [
     "population",
     "median_age",
@@ -53,7 +52,7 @@ feature_columns = [
 ]
 
 
-# Replace missing numeric values with zero where appropriate.
+# Replace missing count values with zero.
 cityscope = cityscope.fillna(
     0,
     subset=[
@@ -150,104 +149,126 @@ cityscope = assembler.transform(cityscope)
 # Standardize the feature vector.
 scaler = StandardScaler(
     inputCol="raw_features",
-    outputCol="features",
+    outputCol="scaled_features",
     withMean=True,
     withStd=True
 )
 
-cityscope = scaler.fit(cityscope).transform(cityscope)
+scaler_model = scaler.fit(cityscope)
+
+cityscope = scaler_model.transform(cityscope)
 
 
-# Evaluate K-Means models with different cluster counts.
-evaluator = ClusteringEvaluator(
-    featuresCol="features",
-    predictionCol="prediction",
-    metricName="silhouette"
+# Reduce the feature space using PCA.
+pca = PCA(
+    k=10,
+    inputCol="scaled_features",
+    outputCol="features"
 )
 
-results = []
+pca_model = pca.fit(cityscope)
 
-for k in range(2, 9):
-
-    kmeans = KMeans(
-        k=k,
-        seed=42,
-        featuresCol="features",
-        predictionCol="prediction"
-    )
-
-    model = kmeans.fit(cityscope)
-
-    predictions = model.transform(cityscope)
-
-    silhouette = evaluator.evaluate(predictions)
-
-    results.append((k, silhouette))
-
-    print(
-        f"k={k} silhouette={silhouette:.4f}",
-        flush=True
-    )
+cityscope = pca_model.transform(cityscope)
 
 
-# Select the cluster count with the highest silhouette score.
-best_k, best_silhouette = max(
-    results,
-    key=lambda x: x[1]
-)
-
-print(
-    f"BEST K: {best_k}",
-    flush=True
-)
-
-print(
-    f"BEST SILHOUETTE: {best_silhouette:.4f}",
-    flush=True
-)
-
-
-# Train the final K-Means model.
-final_kmeans = KMeans(
-    k=best_k,
-    seed=42,
-    featuresCol="features",
-    predictionCol="cluster"
-)
-
-final_model = final_kmeans.fit(cityscope)
-
-cityscope_clustered = final_model.transform(cityscope)
-
-
-# Save city cluster assignments.
-cityscope_clustered.select(
+# Keep the city information and MLlib feature vector.
+city_vectors = cityscope.select(
     "city",
     "state",
     "census_geo_id",
-    "cluster"
-).write.mode("overwrite").parquet(
-    "data/processed/city_mllib"
+    "features"
+).cache()
+
+
+# Build an approximate nearest-neighbor model using Spark MLlib.
+lsh = BucketedRandomProjectionLSH(
+    inputCol="features",
+    outputCol="hashes",
+    bucketLength=1.0,
+    numHashTables=5,
+    seed=42
+)
+
+lsh_model = lsh.fit(city_vectors)
+
+
+# Save the city feature vectors.
+city_vectors.write.mode("overwrite").parquet(
+    "data/processed/city_similarity_vectors"
 )
 
 
-# Save K-Means evaluation results.
-evaluation_df = spark.createDataFrame(
-    results,
-    ["k", "silhouette"]
-)
-
-evaluation_df.write.mode("overwrite").parquet(
-    "data/processed/city_mllib_evaluation"
+# Save the MLlib similarity model.
+lsh_model.write().overwrite().save(
+    "data/processed/city_similarity_model"
 )
 
 
-# Display cluster counts.
-cityscope_clustered.groupBy(
-    "cluster"
-).count().orderBy(
-    "cluster"
-).show()
+# Save the PCA explained variance.
+pca_variance = spark.createDataFrame(
+    [
+        (
+            i + 1,
+            float(value)
+        )
+        for i, value in enumerate(
+            pca_model.explainedVariance.toArray()
+        )
+    ],
+    [
+        "component",
+        "explained_variance"
+    ]
+)
+
+pca_variance.write.mode("overwrite").parquet(
+    "data/processed/city_similarity_pca"
+)
+
+
+# Find example similar cities for Austin.
+austin = city_vectors.filter(
+    (col("city") == "Austin") &
+    (col("state") == "Texas")
+).limit(1)
+
+
+if austin.count() > 0:
+
+    austin_vector = austin.collect()[0]["features"]
+
+    similar_cities = lsh_model.approxNearestNeighbors(
+        city_vectors,
+        austin_vector,
+        11
+    )
+
+    similar_cities = similar_cities.filter(
+        ~(
+            (col("city") == "Austin") &
+            (col("state") == "Texas")
+        )
+    ).limit(10)
+
+    print(
+        "SIMILAR CITIES TO AUSTIN:",
+        flush=True
+    )
+
+    similar_cities.select(
+        "city",
+        "state",
+        "distCol"
+    ).show(
+        10,
+        False
+    )
+
+
+print(
+    "CITY SIMILARITY MLlib COMPLETE",
+    flush=True
+)
 
 
 spark.stop()
