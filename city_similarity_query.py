@@ -78,22 +78,37 @@ similar_cities = (
 )
 
 
-# Remove the queried city and apply the similarity threshold.
+# Remove the queried city.
 similar_cities = similar_cities.filter(
     ~(
         (col("city") == query_city) &
         (col("state") == query_state)
-    ) &
-    (col("distCol") <= 1.6)
+    )
 )
 
 
-# Keep the five closest similar cities.
-similar_cities = (
+# Apply the similarity threshold.
+threshold_matches = (
     similar_cities
-    .orderBy("distCol")
+    .filter(
+        col("distCol") <= 1.6
+    )
+    .orderBy(
+        "distCol"
+    )
     .limit(5)
 )
+
+
+# Fall back to the five closest cities if no cities meet the threshold.
+if threshold_matches.count() > 0:
+    similar_cities = threshold_matches
+else:
+    similar_cities = (
+        similar_cities
+        .orderBy("distCol")
+        .limit(5)
+    )
 
 
 print(
