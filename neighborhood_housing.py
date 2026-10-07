@@ -5,12 +5,11 @@ housing summaries.
 """
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, avg, count, expr, when
+from pyspark.sql.functions import col, avg, count, expr, when, trim
 
 from sedona.spark import SedonaContext
 from sedona.spark.sql import ST_Contains
 
-from state_utils import add_state_key
 
 
 # Create a local Spark session using 4 worker threads.
@@ -64,10 +63,14 @@ neighborhood_df = (
 )
 
 
-# Normalize state values for the spatial join.
-housing_df = add_state_key(housing_df)
-neighborhood_df = add_state_key(neighborhood_df)
-
+# Normalize housing state abbreviations.
+housing_df = (
+    housing_df
+    .withColumn(
+        "state_abbr",
+        trim(col("state"))
+    )
+)
 
 # Create housing point geometries.
 housing_df = (
@@ -84,7 +87,7 @@ housing_neighborhoods = (
     housing_df.alias("h")
     .join(
         neighborhood_df.alias("n"),
-        (col("h.state_key") == col("n.state_key")) &
+        (col("h.state_abbr") == col("n.state_abbr")) &
         ST_Contains(
             col("n.geometry"),
             col("h.point")
