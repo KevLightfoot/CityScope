@@ -72,6 +72,69 @@ housing_properties = (
 
 
 # ---------------------------------------------------------
+# Read individual POI detail data
+# ---------------------------------------------------------
+poi_detail = (
+    spark.read
+    .parquet("data/processed/poi_detail")
+)
+
+
+STATE_FIPS = {
+    "01": "AL",
+    "02": "AK",
+    "04": "AZ",
+    "05": "AR",
+    "06": "CA",
+    "08": "CO",
+    "09": "CT",
+    "10": "DE",
+    "12": "FL",
+    "13": "GA",
+    "15": "HI",
+    "16": "ID",
+    "17": "IL",
+    "18": "IN",
+    "19": "IA",
+    "20": "KS",
+    "21": "KY",
+    "22": "LA",
+    "23": "ME",
+    "24": "MD",
+    "25": "MA",
+    "26": "MI",
+    "27": "MN",
+    "28": "MS",
+    "29": "MO",
+    "30": "MT",
+    "31": "NE",
+    "32": "NV",
+    "33": "NH",
+    "34": "NJ",
+    "35": "NM",
+    "36": "NY",
+    "37": "NC",
+    "38": "ND",
+    "39": "OH",
+    "40": "OK",
+    "41": "OR",
+    "42": "PA",
+    "44": "RI",
+    "45": "SC",
+    "46": "SD",
+    "47": "TN",
+    "48": "TX",
+    "49": "UT",
+    "50": "VT",
+    "51": "VA",
+    "53": "WA",
+    "54": "WV",
+    "55": "WI",
+    "56": "WY"
+}
+
+
+# ---------------------------------------------------------
 # CITY SEARCH
 # ---------------------------------------------------------
 
@@ -271,3 +334,104 @@ def get_housing(city: str, state: str):
         row.asDict()
         for row in result
     ]
+
+@app.get("/api/pois/{scope_type}/{scope_id}")
+def get_pois(
+    scope_type: str,
+    scope_id: str,
+    category: str = "",
+    search: str = "",
+    starts_with: str = "",
+    limit: int = 50,
+    offset: int = 0
+):
+    scope_type = scope_type.lower().strip()
+    category = category.lower().strip()
+    search = search.lower().strip()
+    starts_with = starts_with.lower().strip()
+
+    if scope_type != "city":
+        raise HTTPException(
+            status_code=400,
+            detail="Unsupported POI scope"
+        )
+
+    if len(scope_id) != 7:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid city scope"
+        )
+
+    state_fips = scope_id[:2]
+    state = STATE_FIPS.get(state_fips)
+
+    if state is None:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid city scope"
+        )
+
+    limit = max(1, min(limit, 100))
+    offset = max(0, offset)
+
+    results = (
+        poi_detail
+        .filter(
+            (col("state") == state) &
+            (col("place_GEOID") == scope_id)
+        )
+    )
+
+    if category:
+        results = results.filter(
+            lower(col("cityscope_category")) == category
+        )
+
+    if search:
+        results = results.filter(
+            lower(col("name")).contains(search)
+        )
+
+    if starts_with:
+        results = results.filter(
+            lower(col("name")).startswith(starts_with)
+        )
+
+        results = (
+        results
+        .filter(col("name").isNotNull())
+        .select(
+            "id",
+            "name",
+            "cityscope_category",
+            "category",
+            "basic_category",
+            "confidence",
+            "place_GEOID",
+            "place_name",
+            "state",
+            "longitude",
+            "latitude"
+        )
+        .orderBy(
+            lower(col("name")),
+            col("id")
+        )
+        .limit(offset + limit + 1)
+        .collect()
+    )
+
+    results = results[offset:]
+
+    has_more = len(results) > limit
+
+    if has_more:
+        results = results[:limit]
+
+    return {
+        "results": [
+            row.asDict()
+            for row in results
+        ],
+        "has_more": has_more
+    }

@@ -60,3 +60,41 @@ export async function getHousing(city, state) {
     return response.json();
 }
 
+export async function getPOIs(
+    scopeType,
+    scopeId,
+    category,
+    options = {}
+) {
+    const params = new URLSearchParams();
+
+    if (category) {
+        params.set("category", category);
+    }
+
+    if (options.search) {
+        params.set("search", options.search);
+    }
+
+    if (options.startsWith) {
+        params.set("starts_with", options.startsWith);
+    }
+
+    if (options.limit !== undefined) {
+        params.set("limit", options.limit);
+    }
+
+    if (options.offset !== undefined) {
+        params.set("offset", options.offset);
+    }
+
+    const response = await fetch(
+        `${API_BASE}/api/pois/${encodeURIComponent(scopeType)}/${encodeURIComponent(scopeId)}?${params.toString()}`
+    );
+
+    if (!response.ok) {
+        throw new Error("POI data not found");
+    }
+
+    return response.json();
+}
