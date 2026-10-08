@@ -397,7 +397,8 @@ def get_pois(
             lower(col("name")).startswith(starts_with)
         )
 
-        results = (
+
+    results = (
         results
         .filter(col("name").isNotNull())
         .select(
