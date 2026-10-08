@@ -2,6 +2,7 @@ from pyspark.sql import SparkSession
 from pyspark.sql.functions import col, when, row_number
 from pyspark.sql.window import Window
 
+
 spark = (
     SparkSession.builder
     .appName("CityScope City Integration")
@@ -82,7 +83,6 @@ weather_df = (
     spark.read.parquet("data/processed/weather_city")
     .select(
         "place_GEOID",
-        "place_name",
         "avg_temp",
         "avg_low",
         "avg_high",
@@ -118,7 +118,7 @@ coordinates_df = (
 
 
 # ============================================================
-# BUILD CITY DATASET
+# JOIN CENSUS + HOUSING
 # ============================================================
 
 cityscope = (
@@ -129,6 +129,11 @@ cityscope = (
         "inner"
     )
 )
+
+
+# ============================================================
+# ADD CRIME
+# ============================================================
 
 cityscope = (
     cityscope
@@ -144,10 +149,9 @@ cityscope = (
 )
 
 
-# Census GEO_ID looks like:
-# 0500000US4805000
-#
-# The last 7 digits are the Census place GEOID.
+# ============================================================
+# CREATE PLACE GEOID
+# ============================================================
 
 cityscope = (
     cityscope
@@ -158,6 +162,10 @@ cityscope = (
 )
 
 
+# ============================================================
+# ADD WEATHER
+# ============================================================
+
 cityscope = (
     cityscope
     .join(
@@ -167,6 +175,11 @@ cityscope = (
     )
 )
 
+
+# ============================================================
+# ADD POI
+# ============================================================
+
 cityscope = (
     cityscope
     .join(
@@ -175,6 +188,11 @@ cityscope = (
         "left"
     )
 )
+
+
+# ============================================================
+# ADD COORDINATES
+# ============================================================
 
 cityscope = (
     cityscope
@@ -187,67 +205,29 @@ cityscope = (
 
 
 # ============================================================
-# FINAL DATASET
+# FINAL CLEANUP
 # ============================================================
+
+# Keep every real column produced by the pipeline.
+# This avoids hardcoding Census column names that may change.
+
+keep_columns = [
+    c for c in cityscope.columns
+    if c not in {
+        "city_name",
+        "state",
+        "place_name",
+        "GEO_ID",
+        "NAME"
+    }
+]
 
 cityscope = cityscope.select(
     col("city_name").alias("city"),
     col("state").alias("state"),
-
     col("GEO_ID").alias("census_geo_id"),
     col("NAME").alias("census_name"),
-
-    col("population"),
-    col("median_age"),
-    col("median_household_income"),
-    col("per_capita_income"),
-    col("poverty_rate"),
-    col("bachelors_degree_pct"),
-    col("graduate_degree_pct"),
-    col("unemployment_rate"),
-    col("labor_force"),
-    col("avg_household_size"),
-
-    col("white_pct"),
-    col("black_pct"),
-    col("asian_pct"),
-    col("american_indian_pct"),
-    col("native_hawaiian_pct"),
-    col("other_race_pct"),
-    col("two_or_more_races_pct"),
-    col("hispanic_pct"),
-
-    col("age_under_5_pct"),
-    col("age_5_17_pct"),
-    col("age_18_24_pct"),
-    col("age_25_34_pct"),
-    col("age_35_44_pct"),
-    col("age_45_54_pct"),
-    col("age_55_64_pct"),
-    col("age_65_74_pct"),
-    col("age_75_84_pct"),
-    col("age_85_plus_pct"),
-
-    col("property_count"),
-    col("median_list_price"),
-    col("avg_list_price"),
-    col("median_price_per_sqft"),
-    col("avg_sqft"),
-
-    col("incident_count"),
-    col("crime_data_available"),
-
-    col("avg_temp"),
-    col("avg_low"),
-    col("avg_high"),
-    col("recorded_high"),
-    col("recorded_low"),
-    col("months_available"),
-
-    col("place_GEOID"),
-
-    col("longitude"),
-    col("latitude")
+    *[col(c) for c in keep_columns]
 )
 
 
@@ -259,14 +239,29 @@ cityscope.write.mode("overwrite").parquet(
     "data/processed/cityscope_city"
 )
 
+
+# ============================================================
+# VERIFY
+# ============================================================
+
+print()
+print("========================================")
 print("CITYSCOPE CITY DATASET CREATED")
+print("========================================")
 print("ROWS:", cityscope.count())
 
+print()
+print("SAMPLE CITIES:")
 cityscope.select(
     "city",
     "state",
     "latitude",
     "longitude"
 ).show(20, False)
+
+print()
+print("COLUMNS:")
+print(", ".join(cityscope.columns))
+
 
 spark.stop()
