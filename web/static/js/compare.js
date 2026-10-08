@@ -203,6 +203,13 @@ async function compareWith(city) {
          */
         table.innerHTML = `
             <div class="compare-grid">
+                <div class="compare-city-header"></div>
+                <div class="compare-city-header">
+                    ${currentCity.city}, ${currentCity.state}
+                </div>
+                <div class="compare-city-header">
+                    ${comparisonCity.city}, ${comparisonCity.state}
+                </div>
 
                 <div class="compare-category">
                     DEMOGRAPHICS
