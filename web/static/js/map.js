@@ -18,9 +18,14 @@ export function setupMap() {
 
     map = new maplibregl.Map({
         container: "map",
-        style: "https://tiles.openfreemap.org/styles/liberty",
 
-        center: [-98.5795, 39.8283],
+        style:
+            "https://tiles.openfreemap.org/styles/liberty",
+
+        center: [
+            -98.5795,
+            39.8283
+        ],
 
         zoom: 4,
 
@@ -36,7 +41,9 @@ export function setupMap() {
 
     map.on("styledata", () => {
 
-        const layers = map.getStyle().layers || [];
+        const layers =
+            map.getStyle().layers || [];
+
 
         layers.forEach(layer => {
 
@@ -49,6 +56,7 @@ export function setupMap() {
                 );
 
             }
+
 
             if (
                 layer.type === "line" &&
@@ -79,8 +87,12 @@ export function setupMap() {
 
 export async function showCityOnMap(city) {
 
-    const latitude = Number(city.latitude);
-    const longitude = Number(city.longitude);
+    const latitude =
+        Number(city.latitude);
+
+    const longitude =
+        Number(city.longitude);
+
 
     if (
         !Number.isFinite(latitude) ||
@@ -90,23 +102,32 @@ export async function showCityOnMap(city) {
     }
 
 
+    // =========================
+    // MARKER
+    // =========================
+
     if (marker) {
         marker.remove();
     }
 
 
-    const popup = new maplibregl.Popup({
-        offset: 25
-    }).setHTML(`
-        <strong>${escapeHtml(city.city)}</strong><br>
-        ${escapeHtml(city.state)}
-    `);
+    const popup =
+        new maplibregl.Popup({
+            offset: 25
+        }).setHTML(`
+            <strong>${escapeHtml(city.city)}</strong><br>
+            ${escapeHtml(city.state)}
+        `);
 
 
-    marker = new maplibregl.Marker()
-        .setLngLat([longitude, latitude])
-        .setPopup(popup)
-        .addTo(map);
+    marker =
+        new maplibregl.Marker()
+            .setLngLat([
+                longitude,
+                latitude
+            ])
+            .setPopup(popup)
+            .addTo(map);
 
 
     // =========================
@@ -114,7 +135,10 @@ export async function showCityOnMap(city) {
     // =========================
 
     const boundary =
-        await getBoundary(city.place_GEOID);
+        await getBoundary(
+            city.place_GEOID
+        );
+
 
     const geojson =
         JSON.parse(boundary.geojson);
@@ -132,15 +156,20 @@ export async function showCityOnMap(city) {
 
     } else {
 
-        map.addSource("city-boundary", {
-            type: "geojson",
-            data: geojson
-        });
+        map.addSource(
+            "city-boundary",
+            {
+                type: "geojson",
+                data: geojson
+            }
+        );
 
 
         map.addLayer({
             id: "city-boundary-fill",
+
             type: "fill",
+
             source: "city-boundary",
 
             paint: {
@@ -152,7 +181,9 @@ export async function showCityOnMap(city) {
 
         map.addLayer({
             id: "city-boundary-outline",
+
             type: "line",
+
             source: "city-boundary",
 
             paint: {
@@ -166,7 +197,7 @@ export async function showCityOnMap(city) {
 
 
     // =========================
-    // FIT CITY TO AVAILABLE MAP
+    // CALCULATE CITY BOUNDS
     // =========================
 
     const bounds =
@@ -176,7 +207,10 @@ export async function showCityOnMap(city) {
     if (bounds) {
 
         const panel =
-            document.getElementById("city-panel");
+            document.getElementById(
+                "city-panel"
+            );
+
 
         const panelWidth =
             panel
@@ -184,33 +218,63 @@ export async function showCityOnMap(city) {
                 : 760;
 
 
-        map.fitBounds(
-            bounds,
-            {
-                padding: {
-                    top: 70,
-                    bottom: 70,
-                    left: 70,
-                    right: panelWidth + 70
-                },
+        // Ask MapLibre what camera would
+        // fit the entire city while leaving
+        // room for the panel.
 
-                maxZoom: 11.5,
+        const camera =
+            map.cameraForBounds(
+                bounds,
+                {
+                    padding: {
+                        top: 70,
+                        bottom: 70,
+                        left: 70,
+                        right: panelWidth + 70
+                    },
 
-                duration: 1000
-            }
-        );
+                    maxZoom: 11.5
+                }
+            );
+
+
+        // Actually animate to that camera.
+
+        if (camera) {
+
+            map.flyTo({
+                center: camera.center,
+                zoom: camera.zoom,
+                duration: 1200,
+                essential: true
+            });
+
+        }
 
     }
 
 
-    map.once("moveend", () => {
+    // =========================
+    // OPEN POPUP AFTER FLY
+    // =========================
 
-        marker.togglePopup();
+    map.once(
+        "moveend",
+        () => {
 
-    });
+            if (marker) {
+                marker.togglePopup();
+            }
+
+        }
+    );
 
 }
 
+
+// =========================
+// GEOJSON BOUNDS
+// =========================
 
 function getGeoJsonBounds(geojson) {
 
@@ -225,7 +289,8 @@ function getGeoJsonBounds(geojson) {
         }
 
 
-        // A coordinate pair: [longitude, latitude]
+        // [longitude, latitude]
+
         if (
             value.length >= 2 &&
             typeof value[0] === "number" &&
@@ -248,7 +313,9 @@ function getGeoJsonBounds(geojson) {
     }
 
 
-    if (geojson.type === "Feature") {
+    if (
+        geojson.type === "Feature"
+    ) {
 
         walkCoordinates(
             geojson.geometry.coordinates
@@ -258,15 +325,23 @@ function getGeoJsonBounds(geojson) {
         geojson.type === "FeatureCollection"
     ) {
 
-        geojson.features.forEach(feature => {
+        geojson.features.forEach(
+            feature => {
 
-            walkCoordinates(
-                feature.geometry.coordinates
-            );
+                if (feature.geometry) {
 
-        });
+                    walkCoordinates(
+                        feature.geometry.coordinates
+                    );
 
-    } else if (geojson.coordinates) {
+                }
+
+            }
+        );
+
+    } else if (
+        geojson.coordinates
+    ) {
 
         walkCoordinates(
             geojson.coordinates
@@ -281,13 +356,32 @@ function getGeoJsonBounds(geojson) {
 }
 
 
+// =========================
+// HTML ESCAPE
+// =========================
+
 function escapeHtml(value) {
 
     return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+        .replaceAll(
+            "&",
+            "&amp;"
+        )
+        .replaceAll(
+            "<",
+            "&lt;"
+        )
+        .replaceAll(
+            ">",
+            "&gt;"
+        )
+        .replaceAll(
+            '"',
+            "&quot;"
+        )
+        .replaceAll(
+            "'",
+            "&#039;"
+        );
 
 }
