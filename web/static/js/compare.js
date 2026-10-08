@@ -248,8 +248,7 @@ function positionComparePanel() {
     const rect =
         cityPanel.getBoundingClientRect();
 
-    panel.style.left =
-        `${rect.left}px`;
+    panel.style.left = `${Math.max(18, rect.left - panel.offsetWidth - 8)}px`;
 
     panel.style.top =
         `${rect.top}px`;
