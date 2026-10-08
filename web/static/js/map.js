@@ -5,6 +5,9 @@ let map;
 let marker = null;
 let housingProperties = [];
 let housingVisible = false;
+let poiFeatures = [];
+let poiVisible = false;
+let activePoiCategory = null;
 
 
 export function setupMap() {
@@ -529,4 +532,164 @@ export function clearHousingProperties() {
 
     }
 
+}
+
+export function setPOIs(pois) {
+    poiFeatures = pois || [];
+    poiVisible = false;
+
+    if (map.getLayer("poi-properties")) {
+        map.setLayoutProperty(
+            "poi-properties",
+            "visibility",
+            "none"
+        );
+    }
+}
+
+export function showPOIs(category) {
+    const features = poiFeatures
+        .filter(poi => poi.cityscope_category === category)
+        .map(poi => {
+            const lat = Number(poi.latitude);
+            const lng = Number(poi.longitude);
+
+            if (
+                !Number.isFinite(lat) ||
+                !Number.isFinite(lng)
+            ) {
+                return null;
+            }
+
+            return {
+                type: "Feature",
+
+                geometry: {
+                    type: "Point",
+                    coordinates: [lng, lat]
+                },
+
+                properties: poi
+            };
+        })
+        .filter(Boolean);
+
+    const geojson = {
+        type: "FeatureCollection",
+        features
+    };
+
+    if (!map.getSource("poi-properties")) {
+
+        map.addSource(
+            "poi-properties",
+            {
+                type: "geojson",
+                data: geojson
+            }
+        );
+
+        map.addLayer({
+            id: "poi-properties",
+            type: "circle",
+            source: "poi-properties",
+
+            paint: {
+                "circle-radius": 5,
+                "circle-color": "#4da6ff",
+                "circle-opacity": 0.85,
+                "circle-stroke-color": "#ffffff",
+                "circle-stroke-width": 1
+            }
+        });
+
+        map.on(
+            "click",
+            "poi-properties",
+            event => {
+
+                const poi =
+                    event.features[0].properties;
+
+                new maplibregl.Popup({
+                    offset: 8
+                })
+                    .setLngLat(event.lngLat)
+                    .setHTML(`
+                        <strong>${escapeHtml(poi.name || "Place")}</strong><br>
+                        ${escapeHtml(poi.category || "")}
+                    `)
+                    .addTo(map);
+            }
+        );
+
+        map.on(
+            "mouseenter",
+            "poi-properties",
+            () => {
+                map.getCanvas().style.cursor = "pointer";
+            }
+        );
+
+        map.on(
+            "mouseleave",
+            "poi-properties",
+            () => {
+                map.getCanvas().style.cursor = "";
+            }
+        );
+
+    } else {
+
+        map
+            .getSource("poi-properties")
+            .setData(geojson);
+
+    }
+
+    map.setLayoutProperty(
+        "poi-properties",
+        "visibility",
+        "visible"
+    );
+
+    poiVisible = true;
+    activePoiCategory = category;
+}
+
+export function hidePOIs() {
+
+    if (map.getLayer("poi-properties")) {
+
+        map.setLayoutProperty(
+            "poi-properties",
+            "visibility",
+            "none"
+        );
+
+    }
+
+    poiVisible = false;
+    activePoiCategory = null;
+}
+
+export function clearPOIs() {
+
+    poiFeatures = [];
+    poiVisible = false;
+    activePoiCategory = null;
+
+    if (map.getLayer("poi-properties")) {
+
+        map.setLayoutProperty(
+            "poi-properties",
+            "visibility",
+            "none"
+        );
+
+    }
+}
+
+export function isPOIVisible() {
+    return poiVisible;
 }

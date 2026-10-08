@@ -1,11 +1,12 @@
 import {
     formatNumber,
-    formatCurrency
+    formatCurrency,
 } from "./utils.js";
 
 import {
     getWeather,
-    getHousing
+    getHousing,
+    getPOIs
 } from "./api.js";
 
 import {
@@ -13,11 +14,18 @@ import {
     showHousingProperties,
     hideHousingProperties,
     clearHousingProperties,
-    isHousingVisible
+    isHousingVisible,
+    setPOIs,
+    showPOIs,
+    hidePOIs,
+    clearPOIs,
+    isPOIVisible
 } from "./map.js";
 
 let currentCity = null;
 let housingRequestId = 0;
+let poiRequestId = 0;
+let activePoiCategory = null;
 
 export function setupPanel() {
 
@@ -81,6 +89,84 @@ export function setupPanel() {
             }
         });
     }
+
+    document
+        .querySelectorAll(".poi-button")
+        .forEach(button => {
+
+            button.addEventListener("click", async () => {
+
+                if (!currentCity) {
+                    return;
+                }
+
+                const category =
+                    button.dataset.category;
+
+                if (!category) {
+                    return;
+                }
+
+                if (
+                    activePoiCategory === category &&
+                    isPOIVisible()
+                ) {
+                    hidePOIs();
+                    button.classList.remove("active");
+                    return;
+                }
+
+                document
+                    .querySelectorAll(".poi-button")
+                    .forEach(other => {
+                        other.classList.remove("active");
+                    });
+
+                button.classList.add("active");
+
+                const requestId =
+                    ++poiRequestId;
+
+                button.textContent = "Loading...";
+
+                try {
+
+                    const pois =
+                        await getPOIs(
+                            "city",
+                            currentCity.place_GEOID,
+                            category,
+                            {
+                                limit: 100
+                            }
+                        );
+
+                    if (requestId !== poiRequestId) {
+                        return;
+                    }
+
+                    setPOIs(pois.results);
+
+                    showPOIs(category);
+
+                    activePoiCategory = category;
+
+                } catch (error) {
+
+                    console.error(error);
+
+                } finally {
+
+                    button.textContent =
+                        category.charAt(0).toUpperCase() +
+                        category.slice(1);
+
+                }
+
+            });
+
+        });
+
 }
 
 export function showCity(city) {
@@ -88,6 +174,10 @@ export function showCity(city) {
     housingRequestId++;
 
     clearHousingProperties();
+
+    poiRequestId++;
+    clearPOIs();
+    activePoiCategory = null;
 
     const housingButton =
         document.getElementById("show-housing-button");
