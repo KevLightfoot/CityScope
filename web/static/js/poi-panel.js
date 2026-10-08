@@ -1,121 +1,103 @@
-import { getPOIs } from "./api.js";
+import {
+    getCity,
+    getPOIs
+} from "./api.js";
+
 import {
     setPOIs,
-    showPOIs,
-    hidePOIs
+    showPOIs
 } from "./map.js";
 
-let activeCategory = null;
-let activeCity = null;
-
-let currentSearch = "";
-let currentLetter = "";
-let currentOffset = 0;
-let currentResults = [];
-let selectedPOIs = [];
+let city = null;
+let category = null;
+let search = "";
+let letter = "";
+let offset = 0;
+let selected = new Map();
 
 const PAGE_SIZE = 50;
 
-export function setupPOIPanel() {
-    // Nothing to initialize yet.
-    // The panel is created when a POI category is opened.
+
+export async function openPOIPanel(selectedCategory) {
+
+    category = selectedCategory;
+
+    const cityName =
+        document.getElementById("city-name")?.textContent.trim();
+
+    const state =
+        document.getElementById("city-location")?.textContent.trim();
+
+    if (!cityName || !state) {
+        return;
+    }
+
+    city = await getCity(cityName, state);
+
+    search = "";
+    letter = "";
+    offset = 0;
+    selected.clear();
+
+    renderPanel();
+
+    loadPOIs();
 }
 
-export function openPOIPanel(category, city) {
-    activeCategory = category;
-    activeCity = city;
 
-    currentSearch = "";
-    currentLetter = "";
-    currentOffset = 0;
-    currentResults = [];
-    selectedPOIs = [];
+function renderPanel() {
 
-    createPanel();
-    loadResults();
-}
+    document
+        .getElementById("poi-browser-panel")
+        ?.remove();
 
-function createPanel() {
-    closeExistingPanel();
-
-    const panel = document.createElement("div");
+    const panel = document.createElement("aside");
 
     panel.id = "poi-browser-panel";
-    panel.className = "poi-browser-panel";
 
     panel.innerHTML = `
         <div class="poi-browser-header">
-            <div class="poi-browser-title">
-                ${formatCategory(activeCategory)}
-            </div>
+            <strong>${title(category)}</strong>
 
             <button
-                class="poi-browser-close"
-                id="poi-browser-close"
+                id="poi-close"
                 type="button"
             >
                 ×
             </button>
         </div>
 
-        <div class="poi-browser-controls">
+        <input
+            id="poi-search"
+            type="text"
+            placeholder="Search businesses..."
+        >
 
-            <input
-                id="poi-search"
-                class="poi-search"
-                type="text"
-                placeholder="Search businesses..."
-                autocomplete="off"
-            >
-
-            <div class="poi-letters">
-                <button
-                    type="button"
-                    class="poi-letter active"
-                    data-letter=""
-                >
-                    All
-                </button>
-
-                ${"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-                    .split("")
-                    .map(letter => `
-                        <button
-                            type="button"
-                            class="poi-letter"
-                            data-letter="${letter.toLowerCase()}"
-                        >
-                            ${letter}
-                        </button>
-                    `)
-                    .join("")}
-            </div>
-
+        <div id="poi-letters">
+            <button data-letter="">All</button>
+            ${"ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+                .split("")
+                .map(letter =>
+                    `<button data-letter="${letter.toLowerCase()}">${letter}</button>`
+                )
+                .join("")}
         </div>
 
-        <div class="poi-browser-results" id="poi-browser-results">
-            <div class="poi-loading">
-                Loading...
-            </div>
+        <div id="poi-results">
+            Loading...
         </div>
 
-        <div class="poi-browser-footer">
+        <div class="poi-actions">
 
             <button
-                type="button"
-                class="poi-map-button"
-                id="poi-show-selected"
+                id="poi-selected"
                 disabled
             >
                 Show Selected on Map
             </button>
 
-            <button
-                type="button"
-                class="poi-map-button secondary"
-                id="poi-show-all"
-            >
-                Show All ${formatCategory(activeCategory)} on Map
+            <button id="poi-all">
+                Show All ${title(category)} on Map
             </button>
 
         </div>
@@ -124,362 +106,293 @@ function createPanel() {
     document.body.appendChild(panel);
 
     document
-        .getElementById("poi-browser-close")
-        .addEventListener("click", closePOIPanel);
+        .getElementById("poi-close")
+        .onclick = closePOIPanel;
 
     document
         .getElementById("poi-search")
-        .addEventListener("input", handleSearch);
+        .oninput = event => {
 
-    document
-        .querySelectorAll(".poi-letter")
+            search = event.target.value.trim();
+
+            letter = "";
+            offset = 0;
+
+            loadPOIs();
+        };
+
+    panel
+        .querySelectorAll("[data-letter]")
         .forEach(button => {
-            button.addEventListener("click", () => {
-                handleLetter(button.dataset.letter);
-            });
+
+            button.onclick = () => {
+
+                letter =
+                    button.dataset.letter;
+
+                search = "";
+                offset = 0;
+
+                document
+                    .getElementById("poi-search")
+                    .value = "";
+
+                loadPOIs();
+            };
+
         });
 
     document
-        .getElementById("poi-show-selected")
-        .addEventListener("click", showSelectedOnMap);
+        .getElementById("poi-selected")
+        .onclick = showSelected;
 
     document
-        .getElementById("poi-show-all")
-        .addEventListener("click", showAllOnMap);
+        .getElementById("poi-all")
+        .onclick = showAll;
 }
 
-async function loadResults() {
-    const resultsContainer =
-        document.getElementById("poi-browser-results");
 
-    if (!resultsContainer) {
+async function loadPOIs() {
+
+    const results =
+        document.getElementById("poi-results");
+
+    if (!results) {
         return;
     }
 
-    resultsContainer.innerHTML = `
-        <div class="poi-loading">
-            Loading...
-        </div>
-    `;
+    results.textContent = "Loading...";
 
     try {
+
         const options = {
             limit: PAGE_SIZE,
-            offset: currentOffset
+            offset
         };
 
-        if (currentSearch) {
-            options.search = currentSearch;
+        if (search) {
+            options.search = search;
         }
 
-        if (currentLetter) {
-            options.startsWith = currentLetter;
+        if (letter) {
+            options.startsWith = letter;
         }
 
-        const response = await getPOIs(
+        const data = await getPOIs(
             "city",
-            activeCity.place_GEOID,
-            activeCategory,
+            city.place_GEOID,
+            category,
             options
         );
 
-        currentResults = response.results || [];
-
-        renderResults(response);
+        renderResults(data);
 
     } catch (error) {
-        console.error("POI load failed:", error);
 
-        resultsContainer.innerHTML = `
-            <div class="poi-message">
-                Unable to load places.
-            </div>
-        `;
+        console.error(error);
+
+        results.textContent =
+            "Unable to load places.";
     }
 }
 
-function renderResults(response) {
-    const resultsContainer =
-        document.getElementById("poi-browser-results");
 
-    if (!resultsContainer) {
+function renderResults(data) {
+
+    const results =
+        document.getElementById("poi-results");
+
+    results.innerHTML = "";
+
+    if (!data.results.length) {
+
+        results.textContent =
+            "No places found.";
+
         return;
     }
 
-    if (!currentResults.length) {
-        resultsContainer.innerHTML = `
-            <div class="poi-message">
-                No places found.
-            </div>
-        `;
+    data.results.forEach(poi => {
 
-        updateSelectedButton();
-        return;
+        const row =
+            document.createElement("div");
+
+        row.className = "poi-result";
+
+        const checkbox =
+            document.createElement("input");
+
+        checkbox.type = "checkbox";
+
+        checkbox.checked =
+            selected.has(poi.id);
+
+        checkbox.onchange = () => {
+
+            if (checkbox.checked) {
+                selected.set(poi.id, poi);
+            } else {
+                selected.delete(poi.id);
+            }
+
+            updateSelectedButton();
+        };
+
+        const name =
+            document.createElement("span");
+
+        name.textContent =
+            poi.name || "Unnamed place";
+
+        row.append(
+            checkbox,
+            name
+        );
+
+        results.appendChild(row);
+    });
+
+
+    const pagination =
+        document.createElement("div");
+
+    pagination.className =
+        "poi-pagination";
+
+
+    if (offset > 0) {
+
+        const previous =
+            document.createElement("button");
+
+        previous.textContent =
+            "Previous";
+
+        previous.onclick = () => {
+
+            offset -= PAGE_SIZE;
+
+            loadPOIs();
+        };
+
+        pagination.appendChild(previous);
     }
 
-    resultsContainer.innerHTML = currentResults
-        .map((poi, index) => {
-            const selected = selectedPOIs.some(
-                selectedPOI => selectedPOI.id === poi.id
-            );
 
-            return `
-                <label class="poi-result ${selected ? "selected" : ""}">
-                    <input
-                        type="checkbox"
-                        class="poi-checkbox"
-                        data-index="${index}"
-                        ${selected ? "checked" : ""}
-                    >
+    if (data.has_more) {
 
-                    <span class="poi-result-info">
-                        <span class="poi-result-name">
-                            ${escapeHtml(poi.name || "Unnamed place")}
-                        </span>
+        const next =
+            document.createElement("button");
 
-                        <span class="poi-result-type">
-                            ${escapeHtml(poi.category || "")}
-                        </span>
-                    </span>
-                </label>
-            `;
-        })
-        .join("");
+        next.textContent =
+            "Next";
 
-    resultsContainer
-        .querySelectorAll(".poi-checkbox")
-        .forEach(checkbox => {
-            checkbox.addEventListener(
-                "change",
-                handleSelection
-            );
-        });
+        next.onclick = () => {
 
-    renderPagination(response.has_more);
+            offset += PAGE_SIZE;
+
+            loadPOIs();
+        };
+
+        pagination.appendChild(next);
+    }
+
+
+    results.appendChild(pagination);
+
     updateSelectedButton();
 }
 
-function renderPagination(hasMore) {
-    const resultsContainer =
-        document.getElementById("poi-browser-results");
-
-    const pagination = document.createElement("div");
-
-    pagination.className = "poi-pagination";
-
-    const previousDisabled = currentOffset === 0;
-    const nextDisabled = !hasMore;
-
-    pagination.innerHTML = `
-        <button
-            type="button"
-            class="poi-page-button"
-            id="poi-previous"
-            ${previousDisabled ? "disabled" : ""}
-        >
-            Previous
-        </button>
-
-        <span>
-            Showing ${currentOffset + 1}–${currentOffset + currentResults.length}
-        </span>
-
-        <button
-            type="button"
-            class="poi-page-button"
-            id="poi-next"
-            ${nextDisabled ? "disabled" : ""}
-        >
-            Next
-        </button>
-    `;
-
-    resultsContainer.appendChild(pagination);
-
-    document
-        .getElementById("poi-previous")
-        ?.addEventListener("click", () => {
-            currentOffset = Math.max(
-                0,
-                currentOffset - PAGE_SIZE
-            );
-
-            loadResults();
-        });
-
-    document
-        .getElementById("poi-next")
-        ?.addEventListener("click", () => {
-            currentOffset += PAGE_SIZE;
-            loadResults();
-        });
-}
-
-function handleSearch(event) {
-    currentSearch = event.target.value.trim().toLowerCase();
-
-    currentLetter = "";
-    currentOffset = 0;
-
-    updateLetterButtons();
-    loadResults();
-}
-
-function handleLetter(letter) {
-    currentLetter = letter;
-    currentSearch = "";
-    currentOffset = 0;
-
-    const searchInput =
-        document.getElementById("poi-search");
-
-    if (searchInput) {
-        searchInput.value = "";
-    }
-
-    updateLetterButtons();
-    loadResults();
-}
-
-function updateLetterButtons() {
-    document
-        .querySelectorAll(".poi-letter")
-        .forEach(button => {
-            button.classList.toggle(
-                "active",
-                button.dataset.letter === currentLetter
-            );
-        });
-}
-
-function handleSelection(event) {
-    const index = Number(
-        event.target.dataset.index
-    );
-
-    const poi = currentResults[index];
-
-    if (!poi) {
-        return;
-    }
-
-    if (event.target.checked) {
-        if (
-            !selectedPOIs.some(
-                selectedPOI => selectedPOI.id === poi.id
-            )
-        ) {
-            selectedPOIs.push(poi);
-        }
-    } else {
-        selectedPOIs = selectedPOIs.filter(
-            selectedPOI => selectedPOI.id !== poi.id
-        );
-    }
-
-    event.target
-        .closest(".poi-result")
-        ?.classList.toggle(
-            "selected",
-            event.target.checked
-        );
-
-    updateSelectedButton();
-}
 
 function updateSelectedButton() {
+
     const button =
-        document.getElementById("poi-show-selected");
+        document.getElementById("poi-selected");
 
     if (!button) {
         return;
     }
 
-    button.disabled = selectedPOIs.length === 0;
+    button.disabled =
+        selected.size === 0;
 
     button.textContent =
-        selectedPOIs.length
-            ? `Show ${selectedPOIs.length} Selected on Map`
+        selected.size
+            ? `Show ${selected.size} Selected on Map`
             : "Show Selected on Map";
 }
 
-function showSelectedOnMap() {
-    if (!selectedPOIs.length) {
+
+function showSelected() {
+
+    const pois =
+        [...selected.values()];
+
+    if (!pois.length) {
         return;
     }
 
-    setPOIs(selectedPOIs);
+    setPOIs(pois);
 
-    showPOIs(activeCategory);
+    showPOIs(category);
 }
 
-async function showAllOnMap() {
-    try {
-        const allPOIs = [];
-        let offset = 0;
-        let hasMore = true;
 
-        while (hasMore) {
-            const response = await getPOIs(
+async function showAll() {
+
+    const all = [];
+
+    let currentOffset = 0;
+    let hasMore = true;
+
+    while (hasMore) {
+
+        const data =
+            await getPOIs(
                 "city",
-                activeCity.place_GEOID,
-                activeCategory,
+                city.place_GEOID,
+                category,
                 {
                     limit: 100,
-                    offset
+                    offset: currentOffset
                 }
             );
 
-            const results = response.results || [];
-
-            allPOIs.push(...results);
-
-            hasMore = response.has_more;
-            offset += results.length;
-
-            if (!results.length) {
-                break;
-            }
-        }
-
-        setPOIs(allPOIs);
-        showPOIs(activeCategory);
-
-    } catch (error) {
-        console.error(
-            "Unable to load all POIs:",
-            error
+        all.push(
+            ...data.results
         );
+
+        hasMore =
+            data.has_more;
+
+        currentOffset +=
+            data.results.length;
+
+        if (!data.results.length) {
+            break;
+        }
     }
+
+    setPOIs(all);
+
+    showPOIs(category);
 }
+
 
 export function closePOIPanel() {
-    closeExistingPanel();
+
+    document
+        .getElementById("poi-browser-panel")
+        ?.remove();
 }
 
-function closeExistingPanel() {
-    const existing =
-        document.getElementById("poi-browser-panel");
 
-    if (existing) {
-        existing.remove();
-    }
-}
+function title(value) {
 
-function formatCategory(category) {
-    if (!category) {
+    if (!value) {
         return "Places";
     }
 
-    return category.charAt(0).toUpperCase()
-        + category.slice(1);
-}
-
-function escapeHtml(value) {
-    return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+    return value.charAt(0).toUpperCase()
+        + value.slice(1);
 }

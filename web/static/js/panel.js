@@ -83,7 +83,7 @@ export function setupPanel() {
             }
         });
     }
-    
+
     document
         .querySelectorAll(".poi-button")
         .forEach(button => {
@@ -94,7 +94,7 @@ export function setupPanel() {
                     return;
                 }
 
-                openPOIPanel(category, currentCity);
+                openPOIPanel(category);
             });
         });
 

@@ -1,0 +1,105 @@
+#poi-browser-panel {
+    position: fixed;
+    top: 20px;
+    right: 780px;
+    width: 360px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    z-index: 20;
+    padding: 16px;
+    background: #11161b;
+    border: 1px solid #303840;
+    border-radius: 8px;
+    color: #dce1e6;
+    box-sizing: border-box;
+}
+
+.poi-browser-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+}
+
+#poi-close {
+    background: none;
+    border: 0;
+    color: #dce1e6;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+#poi-search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px;
+    margin-bottom: 10px;
+    background: #1d2329;
+    border: 1px solid #303840;
+    border-radius: 5px;
+    color: #fff;
+}
+
+#poi-letters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-bottom: 12px;
+}
+
+#poi-letters button,
+.poi-pagination button,
+.poi-actions button {
+    padding: 6px 9px;
+    background: #1d2329;
+    border: 1px solid #303840;
+    border-radius: 5px;
+    color: #dce1e6;
+    cursor: pointer;
+}
+
+#poi-letters button:hover,
+.poi-pagination button:hover,
+.poi-actions button:hover {
+    background: #2b323a;
+}
+
+#poi-results {
+    min-height: 100px;
+}
+
+.poi-result {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 8px 4px;
+    border-bottom: 1px solid #252c33;
+}
+
+.poi-result input {
+    cursor: pointer;
+}
+
+.poi-result span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.poi-pagination {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 12px;
+}
+
+.poi-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-top: 14px;
+}
+
+.poi-actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
