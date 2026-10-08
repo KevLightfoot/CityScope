@@ -2,27 +2,36 @@
 <html lang="en">
 
 <head>
+
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
 
     <title>CityScope</title>
 
     <link
         rel="stylesheet"
-        href="static/style.css?v=14
+        href="static/style.css?v=14"
     >
 
     <script
         type="module"
         src="static/js/app.js?v=15"
     ></script>
+
 </head>
+
 
 <body>
 
     <div id="map"></div>
 
+
     <div class="search-container">
+
         <input
             id="city-search"
             type="text"
@@ -31,6 +40,7 @@
         >
 
         <div id="search-results"></div>
+
     </div>
 
 
@@ -46,6 +56,7 @@
             ×
         </button>
 
+
         <h2 id="city-name">
             City
         </h2>
@@ -57,11 +68,14 @@
 
         <div class="panel-sections">
 
-            <div class="panel-section expanded">
+
+            <!-- DEMOGRAPHICS -->
+
+            <div class="panel-section">
 
                 <button class="section-header">
                     <span>Demographics</span>
-                    <span class="section-arrow">⌃</span>
+                    <span class="section-arrow">⌄</span>
                 </button>
 
                 <div class="section-content">
@@ -161,6 +175,8 @@
             </div>
 
 
+            <!-- WEATHER -->
+
             <div class="panel-section">
 
                 <button class="section-header">
@@ -205,6 +221,8 @@
             </div>
 
 
+            <!-- CRIME -->
+
             <div class="panel-section">
 
                 <button class="section-header">
@@ -223,6 +241,8 @@
 
             </div>
 
+
+            <!-- HOUSING -->
 
             <div class="panel-section">
 
@@ -263,6 +283,8 @@
             </div>
 
 
+            <!-- POINTS OF INTEREST -->
+
             <div class="panel-section">
 
                 <button class="section-header">
@@ -272,18 +294,53 @@
 
                 <div class="section-content poi-buttons">
 
-                    <button>Food</button>
-                    <button>Grocery</button>
-                    <button>Healthcare</button>
-                    <button>Shopping</button>
-                    <button>Education</button>
-                    <button>Recreation</button>
-                    <button>Fitness</button>
-                    <button>Entertainment</button>
-                    <button>Transportation</button>
-                    <button>Financial</button>
-                    <button>Lodging</button>
-                    <button>Religious</button>
+                    <button class="poi-button">
+                        Food
+                    </button>
+
+                    <button class="poi-button">
+                        Grocery
+                    </button>
+
+                    <button class="poi-button">
+                        Healthcare
+                    </button>
+
+                    <button class="poi-button">
+                        Shopping
+                    </button>
+
+                    <button class="poi-button">
+                        Education
+                    </button>
+
+                    <button class="poi-button">
+                        Recreation
+                    </button>
+
+                    <button class="poi-button">
+                        Fitness
+                    </button>
+
+                    <button class="poi-button">
+                        Entertainment
+                    </button>
+
+                    <button class="poi-button">
+                        Transportation
+                    </button>
+
+                    <button class="poi-button">
+                        Financial
+                    </button>
+
+                    <button class="poi-button">
+                        Lodging
+                    </button>
+
+                    <button class="poi-button">
+                        Religious
+                    </button>
 
                 </div>
 
