@@ -30,7 +30,7 @@ export function setupMap() {
         zoom: 4,
 
         minZoom: 3,
-        maxZoom: 13,
+        maxZoom: 16,
 
         maxBounds: [
             [-124.848974, 24.396308],
@@ -131,7 +131,7 @@ export async function showCityOnMap(city) {
 
 
     // =========================
-    // GET CITY BOUNDARY
+    // GET BOUNDARY
     // =========================
 
     const boundary =
@@ -145,7 +145,7 @@ export async function showCityOnMap(city) {
 
 
     // =========================
-    // DRAW / UPDATE BOUNDARY
+    // DRAW BOUNDARY
     // =========================
 
     if (map.getSource("city-boundary")) {
@@ -197,7 +197,7 @@ export async function showCityOnMap(city) {
 
 
     // =========================
-    // FIT MAP TO CITY
+    // FIT CITY TO AVAILABLE MAP
     // =========================
 
     const bounds =
@@ -216,23 +216,43 @@ export async function showCityOnMap(city) {
                 : 760;
 
 
-        map.fitBounds(
-            bounds,
-            {
-                padding: {
-                    top: 80,
-                    bottom: 80,
-                    left: 80,
-                    right: panelWidth + 80
-                },
+        const mapWidth =
+            map.getContainer().getBoundingClientRect().width;
 
-                maxZoom: 12.5,
 
+        const availableWidth =
+            Math.max(
+                300,
+                mapWidth - panelWidth - 100
+            );
+
+
+        const camera =
+            map.cameraForBounds(
+                bounds,
+                {
+                    padding: {
+                        top: 80,
+                        bottom: 80,
+                        left: 80,
+                        right: panelWidth + 80
+                    },
+
+                    maxZoom: 16
+                }
+            );
+
+
+        if (camera) {
+
+            map.flyTo({
+                center: camera.center,
+                zoom: camera.zoom,
                 duration: 1200,
-
                 essential: true
-            }
-        );
+            });
+
+        }
 
     }
 
@@ -287,34 +307,38 @@ function getGeoJsonBounds(geojson) {
         }
 
 
-        value.forEach(
-            walkCoordinates
-        );
+        for (const child of value) {
+
+            walkCoordinates(child);
+
+        }
 
     }
 
 
     if (geojson.type === "Feature") {
 
-        walkCoordinates(
-            geojson.geometry.coordinates
-        );
+        if (geojson.geometry) {
+
+            walkCoordinates(
+                geojson.geometry.coordinates
+            );
+
+        }
 
     } else if (geojson.type === "FeatureCollection") {
 
-        geojson.features.forEach(
-            feature => {
+        for (const feature of geojson.features) {
 
-                if (feature.geometry) {
+            if (feature.geometry) {
 
-                    walkCoordinates(
-                        feature.geometry.coordinates
-                    );
-
-                }
+                walkCoordinates(
+                    feature.geometry.coordinates
+                );
 
             }
-        );
+
+        }
 
     } else if (geojson.coordinates) {
 
@@ -325,9 +349,12 @@ function getGeoJsonBounds(geojson) {
     }
 
 
-    return bounds.isEmpty()
-        ? null
-        : bounds;
+    if (bounds.isEmpty()) {
+        return null;
+    }
+
+
+    return bounds;
 }
 
 
