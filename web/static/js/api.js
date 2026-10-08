@@ -23,3 +23,15 @@ export async function getCity(city, state) {
 
     return response.json();
 }
+
+export async function getBoundary(geoid) {
+    const response = await fetch(
+        `${API_BASE}/api/boundary/${encodeURIComponent(geoid)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Boundary not found");
+    }
+
+    return response.json();
+}
