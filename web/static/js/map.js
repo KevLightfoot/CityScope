@@ -196,7 +196,7 @@ export async function showCityOnMap(city) {
     }
 
 
-    // =========================
+     // =========================
     // FIT CITY TO AVAILABLE MAP
     // =========================
 
@@ -216,43 +216,23 @@ export async function showCityOnMap(city) {
                 : 760;
 
 
-        const mapWidth =
-            map.getContainer().getBoundingClientRect().width;
+        map.fitBounds(
+            bounds,
+            {
+                padding: {
+                    top: 80,
+                    bottom: 80,
+                    left: 80,
+                    right: panelWidth + 80
+                },
 
+                maxZoom: 14,
 
-        const availableWidth =
-            Math.max(
-                300,
-                mapWidth - panelWidth - 100
-            );
-
-
-        const camera =
-            map.cameraForBounds(
-                bounds,
-                {
-                    padding: {
-                        top: 80,
-                        bottom: 80,
-                        left: 80,
-                        right: panelWidth + 80
-                    },
-
-                    maxZoom: 16
-                }
-            );
-
-
-        if (camera) {
-
-            map.flyTo({
-                center: camera.center,
-                zoom: camera.zoom,
                 duration: 1200,
-                essential: true
-            });
 
-        }
+                essential: true
+            }
+        );
 
     }
 
