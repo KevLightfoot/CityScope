@@ -243,10 +243,6 @@ async function compareWith(city) {
                 <div>${formatValue(currentCity.age_45_54_pct)}</div>
                 <div>${formatValue(comparisonCity.age_45_54_pct)}</div>
 
-                <div>Age 55–64</div>
-                <div>${formatValue(currentCity.age_55_64_pct)}</div>
-                <div>${formatValue(comparisonCity.age_55_64_pct)}</div>
-
                 <div>Age 65+</div>
                 <div>${formatValue(currentCity.age_65_plus_pct)}</div>
                 <div>${formatValue(comparisonCity.age_65_plus_pct)}</div>
