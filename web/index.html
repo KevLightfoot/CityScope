@@ -170,6 +170,7 @@
             <!-- WEATHER -->
 
             <div class="panel-section">
+
                 <button class="section-header">
                     <span>Weather</span>
                     <span class="section-arrow">⌄</span>
@@ -177,7 +178,38 @@
 
                 <div class="section-content">
 
+                    <!-- STATIC SUMMARY -->
+
+                    <div class="stat">
+                        <span>Average Temperature</span>
+                        <strong id="avg-temp">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Average Low</span>
+                        <strong id="avg-low">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Average High</span>
+                        <strong id="avg-high">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Recorded Low</span>
+                        <strong id="recorded-low">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Recorded High</span>
+                        <strong id="recorded-high">—</strong>
+                    </div>
+
+
+                    <!-- MONTHLY / SEASONAL -->
+
                     <div class="weather-controls">
+
                         <button
                             id="weather-monthly-button"
                             class="weather-view-button active"
@@ -191,21 +223,13 @@
                         >
                             Seasonal
                         </button>
+
                     </div>
 
                     <div id="weather-data"></div>
 
-                    <div class="stat">
-                        <span>Recorded Low</span>
-                        <strong id="recorded-low">—</strong>
-                    </div>
-
-                    <div class="stat">
-                        <span>Recorded High</span>
-                        <strong id="recorded-high">—</strong>
-                    </div>
-
                 </div>
+
             </div>
 
 
