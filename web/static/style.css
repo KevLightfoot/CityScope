@@ -585,6 +585,15 @@ body {
     overflow: hidden;
 }
 
+.compare-city-header {
+    padding: 10px 9px !important;
+    background: #151a1f;
+    color: #ffffff;
+    font-weight: 700;
+    text-align: right;
+    border-bottom: 1px solid #303840;
+}
+
 .compare-grid > * {
     padding: 9px;
     border-bottom: 1px solid #303840;
