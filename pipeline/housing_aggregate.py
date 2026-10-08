@@ -20,7 +20,7 @@ spark.sparkContext.setLogLevel("WARN")
 
 # Read cleaned housing data.
 housing_df = (
-    spark.read.parquet("data/processed/housing_clean")
+    spark.read.parquet("data/processed/housing")
 )
 
 
