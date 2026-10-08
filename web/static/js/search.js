@@ -1,5 +1,5 @@
 import { searchCities, getCity } from "./api.js";
-import { showCityOnMap } from "./map.js";
+import { showCityOnMap } from "./map.js?v=14";
 import { showCity } from "./panel.js";
 import { escapeHtml } from "./utils.js";
 
