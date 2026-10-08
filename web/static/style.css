@@ -1,98 +1,84 @@
 * {
     box-sizing: border-box;
-    margin: 0;
-    padding: 0;
 }
 
 html,
 body {
     width: 100%;
     height: 100%;
-    overflow: hidden;
+    margin: 0;
     font-family: Arial, Helvetica, sans-serif;
 }
 
-/* MAP */
+body {
+    overflow: hidden;
+}
 
 #map {
     width: 100%;
     height: 100%;
-    z-index: 1;
 }
 
 
-/* SEARCH AREA */
+/* =========================
+   SEARCH
+   ========================= */
 
 .search-container {
     position: absolute;
-    top: 20px;
+    top: 18px;
     left: 50%;
     transform: translateX(-50%);
-    width: min(520px, calc(100% - 40px));
+    width: 400px;
     z-index: 1000;
-}
-
-.logo {
-    color: white;
-    font-size: 30px;
-    font-weight: 700;
-    text-align: center;
-    margin-bottom: 12px;
-    text-shadow:
-        0 2px 4px rgba(0, 0, 0, 0.6),
-        0 1px 2px rgba(0, 0, 0, 0.8);
-}
-
-.search-box {
-    width: 100%;
 }
 
 #city-search {
     width: 100%;
-    height: 54px;
-    padding: 0 20px;
-    border: none;
-    border-radius: 14px;
-    background: white;
-    font-size: 17px;
-    color: #222;
-    outline: none;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
-}
+    height: 48px;
+    padding: 0 16px;
 
-#city-search::placeholder {
-    color: #888;
+    border: none;
+    border-radius: 10px;
+
+    background: white;
+
+    font-size: 16px;
+
+    outline: none;
+
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
 }
 
 #city-search:focus {
-    box-shadow:
-        0 4px 18px rgba(0, 0, 0, 0.3),
-        0 0 0 3px rgba(255, 255, 255, 0.55);
+    box-shadow: 0 3px 16px rgba(0, 0, 0, 0.28);
 }
 
-
-/* SEARCH RESULTS */
-
-.search-results {
+#search-results {
     display: none;
+
     margin-top: 6px;
+
+    width: 100%;
+    max-height: 360px;
+
+    overflow-y: auto;
+
     background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+
+    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+
+    overflow-x: hidden;
 }
 
 .search-result {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    padding: 14px 18px;
-    border: none;
-    border-bottom: 1px solid #eee;
-    background: white;
-    text-align: left;
+    padding: 12px 16px;
+
     cursor: pointer;
+
+    border-bottom: 1px solid #eee;
+
     font-size: 15px;
 }
 
@@ -101,160 +87,150 @@ body {
 }
 
 .search-result:hover {
-    background: #f2f2f2;
+    background: #f3f3f3;
 }
 
-.search-result strong {
-    color: #222;
-    font-size: 16px;
+.search-result-city {
+    font-weight: 600;
 }
 
-.search-result span {
+.search-result-state {
+    color: #777;
+    margin-left: 4px;
+}
+
+.search-message {
+    padding: 14px 16px;
     color: #777;
 }
 
 
-/* CITY PANEL */
+/* =========================
+   CITY PANEL
+   ========================= */
 
 .city-panel {
     position: absolute;
-    top: 20px;
-    right: 20px;
-    width: 340px;
-    max-width: calc(100% - 40px);
-    padding: 28px 24px 24px;
-    background: rgba(255, 255, 255, 0.96);
-    border-radius: 16px;
-    box-shadow: 0 5px 25px rgba(0, 0, 0, 0.3);
+
+    top: 18px;
+    right: 18px;
+
+    width: 320px;
+
+    padding: 24px;
+
+    background: white;
+
+    border-radius: 12px;
+
+    box-shadow: 0 3px 18px rgba(0, 0, 0, 0.22);
+
     z-index: 1000;
 }
 
-.city-panel h1 {
-    font-size: 27px;
-    color: #222;
-    margin-bottom: 4px;
+.city-panel.hidden {
+    display: none;
 }
-
-.city-panel p {
-    color: #666;
-    font-size: 16px;
-    margin-bottom: 22px;
-}
-
-
-/* CLOSE BUTTON */
 
 .close-button {
     position: absolute;
-    top: 10px;
+
+    top: 8px;
     right: 12px;
-    width: 32px;
-    height: 32px;
+
     border: none;
-    border-radius: 50%;
-    background: transparent;
-    color: #666;
-    font-size: 25px;
-    line-height: 30px;
+    background: none;
+
+    font-size: 26px;
+    color: #777;
+
     cursor: pointer;
 }
 
 .close-button:hover {
-    background: #eee;
-    color: #222;
+    color: #111;
+}
+
+.city-panel h2 {
+    margin: 0 30px 4px 0;
+
+    font-size: 25px;
+}
+
+#city-location {
+    margin: 0 0 20px;
+
+    color: #777;
+
+    font-size: 15px;
 }
 
 
-/* STATS */
+/* =========================
+   STATS
+   ========================= */
 
 .stats {
     display: grid;
-    grid-template-columns: 1fr 1fr;
     gap: 12px;
 }
 
 .stat {
-    padding: 15px;
-    border-radius: 10px;
+    padding: 12px;
+
     background: #f5f5f5;
+
+    border-radius: 8px;
 }
 
-.label {
+.stat span {
     display: block;
-    margin-bottom: 6px;
+
+    margin-bottom: 4px;
+
     color: #777;
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: uppercase;
+
+    font-size: 13px;
 }
 
-.value {
-    display: block;
-    color: #222;
-    font-size: 19px;
+.stat strong {
+    font-size: 18px;
+}
+
+
+/* =========================
+   LEAFLET
+   ========================= */
+
+.leaflet-popup-content {
+    margin: 12px 16px;
+}
+
+.popup-city {
     font-weight: 700;
+    font-size: 16px;
+}
+
+.popup-state {
+    color: #777;
 }
 
 
-/* STATUS */
-
-.status {
-    position: absolute;
-    bottom: 25px;
-    left: 50%;
-    transform: translateX(-50%);
-    padding: 11px 18px;
-    border-radius: 10px;
-    background: rgba(0, 0, 0, 0.78);
-    color: white;
-    font-size: 14px;
-    z-index: 1000;
-}
-
-
-/* UTILITY */
-
-.hidden {
-    display: none !important;
-}
-
-
-/* LEAFLET */
-
-.leaflet-control-zoom {
-    margin-top: 85px !important;
-}
-
-
-/* MOBILE */
+/* =========================
+   MOBILE
+   ========================= */
 
 @media (max-width: 700px) {
-
     .search-container {
+        width: calc(100% - 32px);
         top: 12px;
-        width: calc(100% - 24px);
-    }
-
-    .logo {
-        font-size: 26px;
-        margin-bottom: 8px;
-    }
-
-    #city-search {
-        height: 50px;
-        font-size: 16px;
     }
 
     .city-panel {
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
         top: auto;
-        bottom: 15px;
-        left: 15px;
-        right: 15px;
         width: auto;
-        max-width: none;
-    }
-
-    .stats {
-        grid-template-columns: 1fr 1fr;
     }
 }
