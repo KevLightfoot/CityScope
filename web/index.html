@@ -40,6 +40,7 @@
 
             <!-- DEMOGRAPHICS -->
             <section class="panel-section">
+
                 <button class="section-header" type="button">
                     <span>Demographics</span>
                     <span class="section-arrow">⌄</span>
@@ -58,66 +59,198 @@
                     </div>
 
                     <div class="stat">
+                        <span>Under 18</span>
+                        <strong id="under-18">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Age 18–24</span>
+                        <strong id="age-18-24">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Age 25–34</span>
+                        <strong id="age-25-34">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Age 35–44</span>
+                        <strong id="age-35-44">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Age 45–54</span>
+                        <strong id="age-45-54">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Age 55–64</span>
+                        <strong id="age-55-64">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Age 65+</span>
+                        <strong id="age-65-plus">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Male</span>
+                        <strong id="male-percent">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Female</span>
+                        <strong id="female-percent">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>White</span>
+                        <strong id="white-percent">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Black</span>
+                        <strong id="black-percent">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Asian</span>
+                        <strong id="asian-percent">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Two or More Races</span>
+                        <strong id="multi-race-percent">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Other Race</span>
+                        <strong id="other-race-percent">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Labor Force</span>
+                        <strong id="labor-force">—</strong>
+                    </div>
+
+                    <div class="stat">
                         <span>Unemployment</span>
                         <strong id="unemployment">—</strong>
                     </div>
 
                 </div>
+
             </section>
 
 
             <!-- WEATHER -->
             <section class="panel-section">
+
                 <button class="section-header" type="button">
                     <span>Weather</span>
                     <span class="section-arrow">⌄</span>
                 </button>
 
                 <div class="section-content">
+
                     <div class="stat">
-                        <span>Weather Data</span>
-                        <strong>Coming soon</strong>
+                        <span>Average Temperature</span>
+                        <strong id="avg-temp">—</strong>
                     </div>
+
+                    <div class="stat">
+                        <span>Average Low</span>
+                        <strong id="avg-low">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Average High</span>
+                        <strong id="avg-high">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Record Low</span>
+                        <strong id="recorded-low">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Record High</span>
+                        <strong id="recorded-high">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Months Available</span>
+                        <strong id="months-available">—</strong>
+                    </div>
+
                 </div>
+
             </section>
 
 
             <!-- CRIME -->
             <section class="panel-section">
+
                 <button class="section-header" type="button">
                     <span>Crime</span>
                     <span class="section-arrow">⌄</span>
                 </button>
 
                 <div class="section-content">
+
                     <div class="stat">
-                        <span>Crime Data</span>
-                        <strong>Coming soon</strong>
+                        <span>Reported Incidents</span>
+                        <strong id="incident-count">—</strong>
                     </div>
+
                 </div>
+
             </section>
 
 
             <!-- HOUSING -->
             <section class="panel-section">
+
                 <button class="section-header" type="button">
                     <span>Housing</span>
-                    <strong class="section-arrow">⌄</strong>
+                    <span class="section-arrow">⌄</span>
                 </button>
 
                 <div class="section-content">
 
                     <div class="stat">
-                        <span>Median Home Price</span>
+                        <span>Properties Listed</span>
+                        <strong id="property-count">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Median List Price</span>
                         <strong id="home-price">—</strong>
                     </div>
 
+                    <div class="stat">
+                        <span>Average List Price</span>
+                        <strong id="avg-list-price">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Median Price / Sq Ft</span>
+                        <strong id="median-price-sqft">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Average Home Size</span>
+                        <strong id="avg-sqft">—</strong>
+                    </div>
+
                 </div>
+
             </section>
 
 
             <!-- POI -->
             <section class="panel-section">
+
                 <button class="section-header" type="button">
                     <span>Points of Interest</span>
                     <span class="section-arrow">⌄</span>
@@ -125,55 +258,21 @@
 
                 <div class="section-content poi-section">
 
-                    <button class="poi-button" data-category="food">
-                        Food
-                    </button>
-
-                    <button class="poi-button" data-category="grocery">
-                        Grocery
-                    </button>
-
-                    <button class="poi-button" data-category="healthcare">
-                        Healthcare
-                    </button>
-
-                    <button class="poi-button" data-category="shopping">
-                        Shopping
-                    </button>
-
-                    <button class="poi-button" data-category="education">
-                        Education
-                    </button>
-
-                    <button class="poi-button" data-category="recreation">
-                        Recreation
-                    </button>
-
-                    <button class="poi-button" data-category="fitness">
-                        Fitness
-                    </button>
-
-                    <button class="poi-button" data-category="entertainment">
-                        Entertainment
-                    </button>
-
-                    <button class="poi-button" data-category="transportation">
-                        Transportation
-                    </button>
-
-                    <button class="poi-button" data-category="financial">
-                        Financial
-                    </button>
-
-                    <button class="poi-button" data-category="lodging">
-                        Lodging
-                    </button>
-
-                    <button class="poi-button" data-category="religious">
-                        Religious
-                    </button>
+                    <button class="poi-button" data-category="food">Food</button>
+                    <button class="poi-button" data-category="grocery">Grocery</button>
+                    <button class="poi-button" data-category="healthcare">Healthcare</button>
+                    <button class="poi-button" data-category="shopping">Shopping</button>
+                    <button class="poi-button" data-category="education">Education</button>
+                    <button class="poi-button" data-category="recreation">Recreation</button>
+                    <button class="poi-button" data-category="fitness">Fitness</button>
+                    <button class="poi-button" data-category="entertainment">Entertainment</button>
+                    <button class="poi-button" data-category="transportation">Transportation</button>
+                    <button class="poi-button" data-category="financial">Financial</button>
+                    <button class="poi-button" data-category="lodging">Lodging</button>
+                    <button class="poi-button" data-category="religious">Religious</button>
 
                 </div>
+
             </section>
 
         </div>
