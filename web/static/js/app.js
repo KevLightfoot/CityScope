@@ -1,5 +1,5 @@
 import { setupSearch } from "./search.js";
-import { setupMap } from "./map.js?v=14";
+import { setupMap } from "./map.js";
 import { setupPanel } from "./panel.js";
 
 setupMap();
