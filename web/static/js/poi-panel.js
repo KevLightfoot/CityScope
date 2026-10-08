@@ -282,6 +282,8 @@ function renderResults(data) {
             document.createElement("button");
 
         button.type = "button";
+        button.className = "poi-duplicate-button";
+
 
         button.textContent =
             `Select all "${name}" (${count})`;
