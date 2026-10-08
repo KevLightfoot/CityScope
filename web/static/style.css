@@ -29,9 +29,7 @@ body {
     position: absolute;
 
     top: 18px;
-    left: 50%;
-
-    transform: translateX(-50%);
+    left: 18px;
 
     width: 500px;
 
