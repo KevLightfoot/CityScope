@@ -40,7 +40,7 @@ result = (
         "nbhd_id",
         "neighborhood",
         st.ST_AsGeoJSON(
-            st.ST_GeomFromWKB(col("geometry"))
+            col("geometry")
         ).alias("geojson")
     )
 )
