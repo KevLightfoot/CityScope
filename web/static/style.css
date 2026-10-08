@@ -464,3 +464,25 @@ body {
 .weather-header span:first-child {
     text-align: left;
 }
+
+.housing-map-button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px 10px;
+    background: #1d2329;
+    border: 1px solid #303840;
+    border-radius: 5px;
+    color: #dce1e6;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.housing-map-button:hover:not(:disabled) {
+    background: #2b323a;
+}
+
+.housing-map-button:disabled {
+    opacity: 0.55;
+    cursor: default;
+}

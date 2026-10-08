@@ -3,6 +3,8 @@ import { getBoundary } from "./api.js";
 
 let map;
 let marker = null;
+let housingProperties = [];
+let housingVisible = false;
 
 
 export function setupMap() {
@@ -321,5 +323,204 @@ function escapeHtml(value) {
         .replaceAll(">", "&gt;")
         .replaceAll('"', "&quot;")
         .replaceAll("'", "&#039;");
+
+}
+
+export function setHousingProperties(properties) {
+
+    housingProperties = properties || [];
+    housingVisible = false;
+
+    if (map.getLayer("housing-properties")) {
+        map.setLayoutProperty(
+            "housing-properties",
+            "visibility",
+            "none"
+        );
+    }
+
+}
+
+
+export function showHousingProperties() {
+
+    if (!housingProperties.length) {
+        return;
+    }
+
+    const features = housingProperties
+        .map(property => {
+
+            const lat = Number(property.lat);
+            const lng = Number(property.lng);
+
+            if (
+                !Number.isFinite(lat) ||
+                !Number.isFinite(lng)
+            ) {
+                return null;
+            }
+
+            return {
+                type: "Feature",
+
+                geometry: {
+                    type: "Point",
+                    coordinates: [lng, lat]
+                },
+
+                properties: property
+            };
+
+        })
+        .filter(Boolean);
+
+
+    const geojson = {
+        type: "FeatureCollection",
+        features
+    };
+
+
+    if (!map.getSource("housing-properties")) {
+
+        map.addSource(
+            "housing-properties",
+            {
+                type: "geojson",
+                data: geojson
+            }
+        );
+
+        map.addLayer({
+            id: "housing-properties",
+            type: "circle",
+            source: "housing-properties",
+
+            paint: {
+                "circle-radius": 4,
+                "circle-color": "#ff6b35",
+                "circle-opacity": 0.8,
+                "circle-stroke-color": "#ffffff",
+                "circle-stroke-width": 1
+            }
+        });
+
+        map.on(
+            "click",
+            "housing-properties",
+            event => {
+
+                const property =
+                    event.features[0].properties;
+
+                const price =
+                    property.list_price
+                        ? `$${Number(property.list_price).toLocaleString()}`
+                        : "—";
+
+                const address =
+                    [
+                        property.street,
+                        property.unit
+                    ]
+                        .filter(Boolean)
+                        .join(" ");
+
+
+                new maplibregl.Popup({
+                    offset: 8
+                })
+                    .setLngLat(event.lngLat)
+                    .setHTML(`
+                        <strong>${escapeHtml(address || "Property")}</strong><br>
+                        ${escapeHtml(property.city)}, ${escapeHtml(property.state)} ${escapeHtml(property.zip || "")}
+                        <br><br>
+                        <strong>${price}</strong><br>
+                        ${property.beds || "—"} beds ·
+                        ${property.baths || "—"} baths<br>
+                        ${
+                            property.sqft
+                                ? `${Number(property.sqft).toLocaleString()} sq ft`
+                                : "—"
+                        }
+                    `)
+                    .addTo(map);
+
+            }
+        );
+
+        map.on(
+            "mouseenter",
+            "housing-properties",
+            () => {
+                map.getCanvas().style.cursor = "pointer";
+            }
+        );
+
+        map.on(
+            "mouseleave",
+            "housing-properties",
+            () => {
+                map.getCanvas().style.cursor = "";
+            }
+        );
+
+    } else {
+
+        map
+            .getSource("housing-properties")
+            .setData(geojson);
+
+    }
+
+
+    map.setLayoutProperty(
+        "housing-properties",
+        "visibility",
+        "visible"
+    );
+
+    housingVisible = true;
+
+}
+
+
+export function hideHousingProperties() {
+
+    if (map.getLayer("housing-properties")) {
+
+        map.setLayoutProperty(
+            "housing-properties",
+            "visibility",
+            "none"
+        );
+
+    }
+
+    housingVisible = false;
+
+}
+
+
+export function isHousingVisible() {
+    return housingVisible;
+}
+
+
+export function clearHousingProperties() {
+
+    housingProperties = [];
+    housingVisible = false;
+
+    if (map.getLayer("housing-properties")) {
+
+        map.setLayoutProperty(
+            "housing-properties",
+            "visibility",
+            "none"
+        );
+
+    }
 
 }

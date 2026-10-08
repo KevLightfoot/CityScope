@@ -3,8 +3,21 @@ import {
     formatCurrency
 } from "./utils.js";
 
-import { getWeather } from "./api.js";
+import {
+    getWeather,
+    getHousing
+} from "./api.js";
 
+import {
+    setHousingProperties,
+    showHousingProperties,
+    hideHousingProperties,
+    clearHousingProperties,
+    isHousingVisible
+} from "./map.js";
+
+let currentCity = null;
+let housingRequestId = 0;
 
 export function setupPanel() {
 
@@ -28,16 +41,62 @@ export function setupPanel() {
                 const section =
                     button.closest(".panel-section");
 
+                const wasExpanded =
+                    section.classList.contains("expanded");
+
                 section.classList.toggle("expanded");
+
+                const title =
+                    button.querySelector("span")?.textContent.trim();
+
+                if (title === "Housing" && !wasExpanded) {
+                    preloadHousing();
+                }
 
             });
 
         });
 
+
+    const housingButton =
+        document.getElementById("show-housing-button");
+
+    if (housingButton) {
+
+        housingButton.addEventListener("click", () => {
+
+            if (isHousingVisible()) {
+
+                hideHousingProperties();
+
+                housingButton.textContent =
+                    "Show Properties on Map";
+
+            } else {
+
+                showHousingProperties();
+
+                housingButton.textContent =
+                    "Hide Properties";
+            }
+        });
+    }
 }
 
-
 export function showCity(city) {
+    currentCity = city;
+    housingRequestId++;
+
+    clearHousingProperties();
+
+    const housingButton =
+        document.getElementById("show-housing-button");
+
+    if (housingButton) {
+        housingButton.disabled = true;
+        housingButton.textContent =
+            "Loading Properties...";
+    }
 
     document
         .getElementById("city-panel")
@@ -250,6 +309,8 @@ export function showCity(city) {
         });
 
 }
+
+
 
 
 function setText(id, value) {
@@ -515,4 +576,60 @@ function monthName(month) {
     ];
 
     return names[month - 1] || "Unknown";
+}
+
+async function preloadHousing() {
+
+    if (!currentCity) {
+        return;
+    }
+
+    const requestId =
+        ++housingRequestId;
+
+    const button =
+        document.getElementById("show-housing-button");
+
+    if (button) {
+        button.disabled = true;
+        button.textContent =
+            "Loading Properties...";
+    }
+
+    try {
+
+        const properties =
+            await getHousing(
+                currentCity.city,
+                currentCity.state
+            );
+
+        if (requestId !== housingRequestId) {
+            return;
+        }
+
+        setHousingProperties(properties);
+
+        if (button) {
+            button.disabled = false;
+            button.textContent =
+                "Show Properties on Map";
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        if (requestId !== housingRequestId) {
+            return;
+        }
+
+        if (button) {
+            button.disabled = true;
+            button.textContent =
+                "Properties Unavailable";
+        }
+
+    }
+
 }

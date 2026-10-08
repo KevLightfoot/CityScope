@@ -47,3 +47,29 @@ export async function getWeather(geoid) {
 
     return response.json();
 }
+
+export async function getHousing(city, state) {
+    const response = await fetch(
+        `${API_BASE}/api/housing/${encodeURIComponent(city)}/${encodeURIComponent(state)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Housing data not found");
+    }
+
+    return response.json();
+}
+
+export async function getHousing(city, state) {
+
+    const response = await fetch(
+        `${API_BASE}/api/housing/${encodeURIComponent(city)}/${encodeURIComponent(state)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Housing data not found");
+    }
+
+    return response.json();
+
+}
