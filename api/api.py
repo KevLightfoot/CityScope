@@ -36,6 +36,19 @@ cities.count()
 
 
 # ---------------------------------------------------------
+# CITY BOUNDARY DATA
+# ---------------------------------------------------------
+
+boundaries = (
+    spark.read
+    .parquet("data/processed/place_boundaries")
+    .cache()
+)
+
+boundaries.count()
+
+
+# ---------------------------------------------------------
 # WEATHER DATA
 # ---------------------------------------------------------
 
@@ -120,24 +133,10 @@ def get_city(city: str, state: str):
 
 @app.get("/api/boundary/{geoid}")
 def get_boundary(geoid: str):
-    from sedona.spark import SedonaContext
-
-    sedona = SedonaContext.create(spark)
-
-    places = (
-        sedona.read
-        .parquet("data/processed/places")
-    )
 
     result = (
-        places
+        boundaries
         .filter(col("GEOID") == geoid)
-        .select(
-            "GEOID",
-            "NAME",
-            "NAMELSAD",
-            "geometry"
-        )
         .limit(1)
         .collect()
     )
@@ -148,18 +147,7 @@ def get_boundary(geoid: str):
             detail="Boundary not found"
         )
 
-    row = result[0]
-
-    geojson = row["geometry"].__geo_interface__
-
-    import json
-
-    return {
-        "GEOID": row["GEOID"],
-        "NAME": row["NAME"],
-        "NAMELSAD": row["NAMELSAD"],
-        "geojson": json.dumps(geojson)
-    }
+    return result[0].asDict()
 
 
 # ---------------------------------------------------------
