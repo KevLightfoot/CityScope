@@ -1,14 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>CityScope</title>
 
-    <link rel="stylesheet" href="static/style.css?v=4">
-
-    <link rel="stylesheet" href="static/style.css">
+    <link
+        rel="stylesheet"
+        href="static/style.css?v=13"
+    >
 </head>
 
 <body>
@@ -26,21 +28,35 @@
         <div id="search-results"></div>
     </div>
 
-    <aside id="city-panel" class="city-panel hidden">
 
-        <button id="close-panel" class="close-button">×</button>
+    <aside
+        id="city-panel"
+        class="city-panel hidden"
+    >
 
-        <h2 id="city-name">City</h2>
-        <p id="city-location">State</p>
+        <button
+            id="close-panel"
+            class="close-button"
+        >
+            ×
+        </button>
+
+        <h2 id="city-name">
+            City
+        </h2>
+
+        <p id="city-location">
+            State
+        </p>
+
 
         <div class="panel-sections">
 
-            <!-- DEMOGRAPHICS -->
-            <section class="panel-section">
+            <div class="panel-section expanded">
 
-                <button class="section-header" type="button">
+                <button class="section-header">
                     <span>Demographics</span>
-                    <span class="section-arrow">⌄</span>
+                    <span class="section-arrow">⌃</span>
                 </button>
 
                 <div class="section-content">
@@ -137,13 +153,12 @@
 
                 </div>
 
-            </section>
+            </div>
 
 
-            <!-- WEATHER -->
-            <section class="panel-section">
+            <div class="panel-section">
 
-                <button class="section-header" type="button">
+                <button class="section-header">
                     <span>Weather</span>
                     <span class="section-arrow">⌄</span>
                 </button>
@@ -166,12 +181,12 @@
                     </div>
 
                     <div class="stat">
-                        <span>Record Low</span>
+                        <span>Recorded Low</span>
                         <strong id="recorded-low">—</strong>
                     </div>
 
                     <div class="stat">
-                        <span>Record High</span>
+                        <span>Recorded High</span>
                         <strong id="recorded-high">—</strong>
                     </div>
 
@@ -182,13 +197,12 @@
 
                 </div>
 
-            </section>
+            </div>
 
 
-            <!-- CRIME -->
-            <section class="panel-section">
+            <div class="panel-section">
 
-                <button class="section-header" type="button">
+                <button class="section-header">
                     <span>Crime</span>
                     <span class="section-arrow">⌄</span>
                 </button>
@@ -196,19 +210,18 @@
                 <div class="section-content">
 
                     <div class="stat">
-                        <span>Reported Incidents</span>
+                        <span>Incidents</span>
                         <strong id="incident-count">—</strong>
                     </div>
 
                 </div>
 
-            </section>
+            </div>
 
 
-            <!-- HOUSING -->
-            <section class="panel-section">
+            <div class="panel-section">
 
-                <button class="section-header" type="button">
+                <button class="section-header">
                     <span>Housing</span>
                     <span class="section-arrow">⌄</span>
                 </button>
@@ -216,7 +229,7 @@
                 <div class="section-content">
 
                     <div class="stat">
-                        <span>Properties Listed</span>
+                        <span>Properties</span>
                         <strong id="property-count">—</strong>
                     </div>
 
@@ -236,48 +249,51 @@
                     </div>
 
                     <div class="stat">
-                        <span>Average Home Size</span>
+                        <span>Average Sq Ft</span>
                         <strong id="avg-sqft">—</strong>
                     </div>
 
                 </div>
 
-            </section>
+            </div>
 
 
-            <!-- POI -->
-            <section class="panel-section">
+            <div class="panel-section">
 
-                <button class="section-header" type="button">
+                <button class="section-header">
                     <span>Points of Interest</span>
                     <span class="section-arrow">⌄</span>
                 </button>
 
-                <div class="section-content poi-section">
+                <div class="section-content poi-buttons">
 
-                    <button class="poi-button" data-category="food">Food</button>
-                    <button class="poi-button" data-category="grocery">Grocery</button>
-                    <button class="poi-button" data-category="healthcare">Healthcare</button>
-                    <button class="poi-button" data-category="shopping">Shopping</button>
-                    <button class="poi-button" data-category="education">Education</button>
-                    <button class="poi-button" data-category="recreation">Recreation</button>
-                    <button class="poi-button" data-category="fitness">Fitness</button>
-                    <button class="poi-button" data-category="entertainment">Entertainment</button>
-                    <button class="poi-button" data-category="transportation">Transportation</button>
-                    <button class="poi-button" data-category="financial">Financial</button>
-                    <button class="poi-button" data-category="lodging">Lodging</button>
-                    <button class="poi-button" data-category="religious">Religious</button>
+                    <button>Food</button>
+                    <button>Grocery</button>
+                    <button>Healthcare</button>
+                    <button>Shopping</button>
+                    <button>Education</button>
+                    <button>Recreation</button>
+                    <button>Fitness</button>
+                    <button>Entertainment</button>
+                    <button>Transportation</button>
+                    <button>Financial</button>
+                    <button>Lodging</button>
+                    <button>Religious</button>
 
                 </div>
 
-            </section>
+            </div>
 
         </div>
 
     </aside>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script type="module" src="static/js/app.js?v=2"></script>
+
+    <script
+        type="module"
+        src="static/js/app.js?v=13"
+    ></script>
 
 </body>
+
 </html>
