@@ -18,7 +18,7 @@ export function setupPanel() {
 
 
     document
-        .querySelectorAll(".section-header")
+        .querySelectorAll(".panel-section-header")
         .forEach(button => {
 
             button.addEventListener("click", () => {
@@ -50,18 +50,42 @@ export function showCity(city) {
         city.state || "";
 
 
-    // =========================
     // DEMOGRAPHICS
-    // =========================
 
-    setText("population", formatNumber(city.population));
-    setText("median-age", formatNumber(city.median_age));
+    setText(
+        "population",
+        formatNumber(city.population)
+    );
 
-    setPercent("under-18", city.under_18_pct);
-    setPercent("age-20-24", city.age_20_24_pct);
-    setPercent("age-25-34", city.age_25_34_pct);
-    setPercent("age-35-44", city.age_35_44_pct);
-    setPercent("age-45-54", city.age_45_54_pct);
+    setText(
+        "median-age",
+        formatNumber(city.median_age)
+    );
+
+    setPercent(
+        "under-18",
+        city.under_18_pct
+    );
+
+    setPercent(
+        "age-20-24",
+        city.age_20_24_pct
+    );
+
+    setPercent(
+        "age-25-34",
+        city.age_25_34_pct
+    );
+
+    setPercent(
+        "age-35-44",
+        city.age_35_44_pct
+    );
+
+    setPercent(
+        "age-45-54",
+        city.age_45_54_pct
+    );
 
     setPercent(
         "age-55-64",
@@ -80,12 +104,30 @@ export function showCity(city) {
         )
     );
 
-    setPercent("male-percent", city.male_pct);
-    setPercent("female-percent", city.female_pct);
+    setPercent(
+        "male-percent",
+        city.male_pct
+    );
 
-    setPercent("white-percent", city.white_pct);
-    setPercent("black-percent", city.black_pct);
-    setPercent("asian-percent", city.asian_pct);
+    setPercent(
+        "female-percent",
+        city.female_pct
+    );
+
+    setPercent(
+        "white-percent",
+        city.white_pct
+    );
+
+    setPercent(
+        "black-percent",
+        city.black_pct
+    );
+
+    setPercent(
+        "asian-percent",
+        city.asian_pct
+    );
 
     setPercent(
         "multi-race-percent",
@@ -108,15 +150,32 @@ export function showCity(city) {
     );
 
 
-    // =========================
     // WEATHER
-    // =========================
 
-    setTemperature("avg-temp", city.avg_temp);
-    setTemperature("avg-low", city.avg_low);
-    setTemperature("avg-high", city.avg_high);
-    setTemperature("recorded-low", city.recorded_low);
-    setTemperature("recorded-high", city.recorded_high);
+    setTemperature(
+        "avg-temp",
+        city.avg_temp
+    );
+
+    setTemperature(
+        "avg-low",
+        city.avg_low
+    );
+
+    setTemperature(
+        "avg-high",
+        city.avg_high
+    );
+
+    setTemperature(
+        "recorded-low",
+        city.recorded_low
+    );
+
+    setTemperature(
+        "recorded-high",
+        city.recorded_high
+    );
 
     setText(
         "months-available",
@@ -124,9 +183,7 @@ export function showCity(city) {
     );
 
 
-    // =========================
     // CRIME
-    // =========================
 
     setText(
         "incident-count",
@@ -134,9 +191,7 @@ export function showCity(city) {
     );
 
 
-    // =========================
     // HOUSING
-    // =========================
 
     setText(
         "property-count",
@@ -166,9 +221,7 @@ export function showCity(city) {
     );
 
 
-    // =========================
     // CLOSE ALL SECTIONS
-    // =========================
 
     document
         .querySelectorAll(".panel-section")
@@ -181,7 +234,8 @@ export function showCity(city) {
 
 function setText(id, value) {
 
-    const element = document.getElementById(id);
+    const element =
+        document.getElementById(id);
 
     if (element) {
         element.textContent = value;
@@ -192,7 +246,8 @@ function setText(id, value) {
 
 function setPercent(id, value) {
 
-    const element = document.getElementById(id);
+    const element =
+        document.getElementById(id);
 
     if (!element) {
         return;
@@ -215,7 +270,8 @@ function setPercent(id, value) {
 
 function setTemperature(id, value) {
 
-    const element = document.getElementById(id);
+    const element =
+        document.getElementById(id);
 
     if (!element) {
         return;
@@ -238,9 +294,10 @@ function setTemperature(id, value) {
 
 function combinePercent(...values) {
 
-    const numbers = values
-        .map(Number)
-        .filter(Number.isFinite);
+    const numbers =
+        values
+            .map(Number)
+            .filter(Number.isFinite);
 
     if (!numbers.length) {
         return null;
