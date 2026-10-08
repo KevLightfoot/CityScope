@@ -609,6 +609,7 @@ export function showPOIs(category) {
             "poi-properties",
             event => {
 
+                const poi = event.features[0].properties;
                 if (poiPopup) {
                     poiPopup.remove();
                 }
