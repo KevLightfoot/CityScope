@@ -490,3 +490,111 @@ body {
     opacity: 0.55;
     cursor: default;
 }
+
+.compare-button {
+    width: 100%;
+    margin-top: 8px;
+    padding: 12px;
+    background: #1d2329;
+    border: 1px solid #303840;
+    border-radius: 8px;
+    color: #dce1e6;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.compare-button:hover {
+    background: #2b323a;
+}
+
+#compare-panel {
+    position: fixed;
+    width: 520px;
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    z-index: 30;
+    padding: 16px;
+    box-sizing: border-box;
+    background: #11161b;
+    border: 1px solid #303840;
+    border-radius: 8px;
+    color: #dce1e6;
+}
+
+.compare-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    font-size: 18px;
+}
+
+#compare-close {
+    background: none;
+    border: 0;
+    color: #dce1e6;
+    font-size: 24px;
+    cursor: pointer;
+}
+
+.compare-current {
+    margin-bottom: 12px;
+}
+
+.compare-current span {
+    display: block;
+    margin-top: 3px;
+    color: #9da7b0;
+}
+
+#compare-search {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 9px;
+    background: #1d2329;
+    border: 1px solid #303840;
+    border-radius: 5px;
+    color: #fff;
+    margin-bottom: 10px;
+}
+
+.compare-city-result {
+    display: block;
+    width: 100%;
+    padding: 9px;
+    margin-bottom: 5px;
+    background: #1d2329;
+    border: 1px solid #303840;
+    border-radius: 5px;
+    color: #dce1e6;
+    text-align: left;
+    cursor: pointer;
+}
+
+.compare-city-result:hover {
+    background: #2b323a;
+}
+
+.compare-grid {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr 1fr;
+    margin-top: 16px;
+    border: 1px solid #303840;
+    border-radius: 6px;
+    overflow: hidden;
+}
+
+.compare-grid > * {
+    padding: 9px;
+    border-bottom: 1px solid #303840;
+}
+
+.compare-grid > :nth-child(3n + 2),
+.compare-grid > :nth-child(3n + 3) {
+    text-align: right;
+}
+
+.compare-grid > :nth-last-child(-n + 3) {
+    border-bottom: 0;
+}
