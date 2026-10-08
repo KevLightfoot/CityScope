@@ -8,6 +8,7 @@ export function setupSearch() {
     const results = document.getElementById("search-results");
 
     let timer;
+    let searchId = 0;
 
     input.addEventListener("input", () => {
         clearTimeout(timer);
@@ -19,8 +20,10 @@ export function setupSearch() {
             return;
         }
 
+        const currentSearchId = ++searchId;
+
         timer = setTimeout(
-            () => performSearch(query, input, results),
+            () => performSearch(query, input, results, currentSearchId, () => searchId),
             200
         );
     });
@@ -38,9 +41,19 @@ export function setupSearch() {
     });
 }
 
-async function performSearch(query, input, results) {
+async function performSearch(
+    query,
+    input,
+    results,
+    currentSearchId,
+    getCurrentSearchId
+) {
     try {
         const cities = await searchCities(query);
+
+        if (currentSearchId !== getCurrentSearchId()) {
+            return;
+        }
 
         results.innerHTML = "";
 
@@ -83,6 +96,10 @@ async function performSearch(query, input, results) {
 
     } catch (error) {
         console.error(error);
+
+        if (currentSearchId !== getCurrentSearchId()) {
+            return;
+        }
 
         results.innerHTML =
             `<div class="search-message">Search unavailable</div>`;

@@ -4,5 +4,5 @@ import { setupPanel } from "./panel.js";
 
 const map = setupMap();
 
-setupSearch(map);
+setupSearch();
 setupPanel();
