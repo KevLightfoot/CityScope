@@ -406,36 +406,3 @@ body {
 /* =========================
    MOBILE
    ========================= */
-
-@media (max-width: 800px) {
-
-    .city-panel {
-        left: 12px;
-        right: 12px;
-        top: 12px;
-
-        width: auto;
-        max-width: none;
-
-        max-height: calc(100vh - 24px);
-
-        padding: 20px;
-    }
-
-    .panel-sections {
-        grid-template-columns: 1fr 1fr;
-    }
-
-    .panel-section:last-child {
-        grid-column: 1 / -1;
-    }
-
-    .poi-section {
-        grid-template-columns: repeat(2, 1fr);
-    }
-
-    .search-container {
-        width: calc(100% - 32px);
-        top: 12px;
-    }
-}
