@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>CityScope</title>
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <link rel="stylesheet" href="static/style.css">
+
+    <style>
+        .search-container {
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 9999;
+            width: 380px;
+        }
+
+        .search-box {
+            width: 100%;
+        }
+
+        #city-search {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        #search-results {
+            position: absolute;
+            top: 48px;
+            left: 0;
+            width: 100%;
+            box-sizing: border-box;
+            z-index: 10000;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.3);
+        }
+
+        .search-result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            padding: 12px 16px;
+            border: none;
+            border-bottom: 1px solid #eeeeee;
+            background: white;
+            cursor: pointer;
+            text-align: left;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+
+        .search-result:hover {
+            background: #f3f3f3;
+        }
+
+        .search-result strong {
+            color: #222;
+        }
+
+        .search-result span {
+            color: #777;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="map"></div>
+
+    <div class="search-container">
+
+        <div class="logo">CityScope</div>
+
+        <div class="search-box">
+            <input
+                id="city-search"
+                type="text"
+                placeholder="Search any U.S. city..."
+                autocomplete="off"
+            >
+        </div>
+
+        <div id="search-results" style="display: none;"></div>
+
+    </div>
+
+    <div id="city-panel" class="city-panel hidden">
+
+        <button id="close-panel" class="close-button">×</button>
+
+        <h1 id="city-name"></h1>
+        <p id="city-state"></p>
+
+        <div class="stats">
+
+            <div class="stat">
+                <span class="label">Population</span>
+                <span id="population" class="value"></span>
+            </div>
+
+            <div class="stat">
+                <span class="label">Median Age</span>
+                <span id="median-age" class="value"></span>
+            </div>
+
+            <div class="stat">
+                <span class="label">Median Home Price</span>
+                <span id="home-price" class="value"></span>
+            </div>
+
+            <div class="stat">
+                <span class="label">Unemployment</span>
+                <span id="unemployment" class="value"></span>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div id="status" class="status hidden"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- cache-busted -->
+    <script src="static/app.js?v=4"></script>
+
+</body>
+</html>
