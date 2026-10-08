@@ -630,3 +630,51 @@ body {
     letter-spacing: 0.5px;
     color: #ffffff;
 }
+
+/* =========================
+   VIEW TOGGLE
+   ========================= */
+
+#view-toggle {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+
+    display: flex;
+
+    z-index: 2000;
+
+    background: #11161b;
+    border: 1px solid #303840;
+    border-radius: 8px;
+
+    padding: 4px;
+
+    box-shadow:
+        0 3px 12px rgba(0, 0, 0, 0.25);
+}
+
+#view-toggle button {
+    border: none;
+    border-radius: 5px;
+
+    padding: 9px 16px;
+
+    background: transparent;
+    color: #9da7b0;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    cursor: pointer;
+}
+
+#view-toggle button:hover {
+    background: #1d2329;
+    color: #ffffff;
+}
+
+#view-toggle button.active {
+    background: #2b323a;
+    color: #ffffff;
+}
