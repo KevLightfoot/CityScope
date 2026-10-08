@@ -1,4 +1,5 @@
 import * as maplibregl from "https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.mjs";
+import { getBoundary } from "./api.js";
 
 let map;
 let marker = null;
@@ -30,7 +31,11 @@ export function setupMap() {
 
         layers.forEach(layer => {
             if (layer.type === "symbol") {
-                map.setLayoutProperty(layer.id, "visibility", "none");
+                map.setLayoutProperty(
+                    layer.id,
+                    "visibility",
+                    "none"
+                );
             }
         });
     });
@@ -38,7 +43,7 @@ export function setupMap() {
     return map;
 }
 
-export function showCityOnMap(city) {
+export async function showCityOnMap(city) {
     const latitude = Number(city.latitude);
     const longitude = Number(city.longitude);
 
@@ -67,6 +72,40 @@ export function showCityOnMap(city) {
         zoom: 10,
         duration: 1200
     });
+
+    const boundary = await getBoundary(city.place_GEOID);
+
+    const geojson = JSON.parse(boundary.geojson);
+
+    if (map.getSource("city-boundary")) {
+        map.getSource("city-boundary").setData(geojson);
+    } else {
+        map.addSource("city-boundary", {
+            type: "geojson",
+            data: geojson
+        });
+
+        map.addLayer({
+            id: "city-boundary-fill",
+            type: "fill",
+            source: "city-boundary",
+            paint: {
+                "fill-color": "#3388ff",
+                "fill-opacity": 0.12
+            }
+        });
+
+        map.addLayer({
+            id: "city-boundary-outline",
+            type: "line",
+            source: "city-boundary",
+            paint: {
+                "line-color": "#3388ff",
+                "line-width": 3,
+                "line-opacity": 0.9
+            }
+        });
+    }
 
     map.once("moveend", () => {
         marker.togglePopup();
