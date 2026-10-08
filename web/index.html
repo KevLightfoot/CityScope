@@ -30,32 +30,154 @@
     </div>
 
     <aside id="city-panel" class="city-panel hidden">
+
         <button id="close-panel" class="close-button">×</button>
 
         <h2 id="city-name">City</h2>
         <p id="city-location">State</p>
 
-        <div class="stats">
-            <div class="stat">
-                <span>Population</span>
-                <strong id="population">—</strong>
-            </div>
+        <div class="panel-sections">
 
-            <div class="stat">
-                <span>Median Age</span>
-                <strong id="median-age">—</strong>
-            </div>
+            <!-- DEMOGRAPHICS -->
+            <section class="panel-section">
+                <button class="section-header" type="button">
+                    <span>Demographics</span>
+                    <span class="section-arrow">⌄</span>
+                </button>
 
-            <div class="stat">
-                <span>Median Home Price</span>
-                <strong id="home-price">—</strong>
-            </div>
+                <div class="section-content">
 
-            <div class="stat">
-                <span>Unemployment</span>
-                <strong id="unemployment">—</strong>
-            </div>
+                    <div class="stat">
+                        <span>Population</span>
+                        <strong id="population">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Median Age</span>
+                        <strong id="median-age">—</strong>
+                    </div>
+
+                    <div class="stat">
+                        <span>Unemployment</span>
+                        <strong id="unemployment">—</strong>
+                    </div>
+
+                </div>
+            </section>
+
+
+            <!-- WEATHER -->
+            <section class="panel-section">
+                <button class="section-header" type="button">
+                    <span>Weather</span>
+                    <span class="section-arrow">⌄</span>
+                </button>
+
+                <div class="section-content">
+                    <div class="stat">
+                        <span>Weather Data</span>
+                        <strong>Coming soon</strong>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- CRIME -->
+            <section class="panel-section">
+                <button class="section-header" type="button">
+                    <span>Crime</span>
+                    <span class="section-arrow">⌄</span>
+                </button>
+
+                <div class="section-content">
+                    <div class="stat">
+                        <span>Crime Data</span>
+                        <strong>Coming soon</strong>
+                    </div>
+                </div>
+            </section>
+
+
+            <!-- HOUSING -->
+            <section class="panel-section">
+                <button class="section-header" type="button">
+                    <span>Housing</span>
+                    <strong class="section-arrow">⌄</strong>
+                </button>
+
+                <div class="section-content">
+
+                    <div class="stat">
+                        <span>Median Home Price</span>
+                        <strong id="home-price">—</strong>
+                    </div>
+
+                </div>
+            </section>
+
+
+            <!-- POI -->
+            <section class="panel-section">
+                <button class="section-header" type="button">
+                    <span>Points of Interest</span>
+                    <span class="section-arrow">⌄</span>
+                </button>
+
+                <div class="section-content poi-section">
+
+                    <button class="poi-button" data-category="food">
+                        Food
+                    </button>
+
+                    <button class="poi-button" data-category="grocery">
+                        Grocery
+                    </button>
+
+                    <button class="poi-button" data-category="healthcare">
+                        Healthcare
+                    </button>
+
+                    <button class="poi-button" data-category="shopping">
+                        Shopping
+                    </button>
+
+                    <button class="poi-button" data-category="education">
+                        Education
+                    </button>
+
+                    <button class="poi-button" data-category="recreation">
+                        Recreation
+                    </button>
+
+                    <button class="poi-button" data-category="fitness">
+                        Fitness
+                    </button>
+
+                    <button class="poi-button" data-category="entertainment">
+                        Entertainment
+                    </button>
+
+                    <button class="poi-button" data-category="transportation">
+                        Transportation
+                    </button>
+
+                    <button class="poi-button" data-category="financial">
+                        Financial
+                    </button>
+
+                    <button class="poi-button" data-category="lodging">
+                        Lodging
+                    </button>
+
+                    <button class="poi-button" data-category="religious">
+                        Religious
+                    </button>
+
+                </div>
+            </section>
+
         </div>
+
     </aside>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
