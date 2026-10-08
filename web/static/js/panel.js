@@ -54,14 +54,40 @@ export function showCity(city) {
     // DEMOGRAPHICS
     // =========================
 
-    setText("population", formatNumber(city.population));
-    setText("median-age", formatNumber(city.median_age));
+    setText(
+        "population",
+        formatNumber(city.population)
+    );
 
-    setPercent("under-18", city.under_18_pct);
-    setPercent("age-20-24", city.age_20_24_pct);
-    setPercent("age-25-34", city.age_25_34_pct);
-    setPercent("age-35-44", city.age_35_44_pct);
-    setPercent("age-45-54", city.age_45_54_pct);
+    setText(
+        "median-age",
+        formatNumber(city.median_age)
+    );
+
+    setPercent(
+        "under-18",
+        city.under_18_pct
+    );
+
+    setPercent(
+        "age-20-24",
+        city.age_20_24_pct
+    );
+
+    setPercent(
+        "age-25-34",
+        city.age_25_34_pct
+    );
+
+    setPercent(
+        "age-35-44",
+        city.age_35_44_pct
+    );
+
+    setPercent(
+        "age-45-54",
+        city.age_45_54_pct
+    );
 
     setPercent(
         "age-55-64",
@@ -80,16 +106,29 @@ export function showCity(city) {
         )
     );
 
-    setPercent("male-percent", city.male_pct);
-    setPercent("female-percent", city.female_pct);
-
-    setPercent("white-percent", city.white_pct);
-    setPercent("black-percent", city.black_pct);
-    setPercent("asian-percent", city.asian_pct);
+    setPercent(
+        "male-percent",
+        city.male_pct
+    );
 
     setPercent(
-        "multi-race-percent",
-        city.two_or_more_races_pct
+        "female-percent",
+        city.female_pct
+    );
+
+    setPercent(
+        "white-percent",
+        city.white_pct
+    );
+
+    setPercent(
+        "black-percent",
+        city.black_pct
+    );
+
+    setPercent(
+        "asian-percent",
+        city.asian_pct
     );
 
     setPercent(
@@ -112,15 +151,29 @@ export function showCity(city) {
     // WEATHER
     // =========================
 
-    setTemperature("avg-temp", city.avg_temp);
-    setTemperature("avg-low", city.avg_low);
-    setTemperature("avg-high", city.avg_high);
-    setTemperature("recorded-low", city.recorded_low);
-    setTemperature("recorded-high", city.recorded_high);
+    setTemperature(
+        "avg-temp",
+        city.avg_temp
+    );
 
-    setText(
-        "months-available",
-        formatNumber(city.months_available)
+    setTemperature(
+        "avg-low",
+        city.avg_low
+    );
+
+    setTemperature(
+        "avg-high",
+        city.avg_high
+    );
+
+    setTemperature(
+        "recorded-low",
+        city.recorded_low
+    );
+
+    setTemperature(
+        "recorded-high",
+        city.recorded_high
     );
 
 
@@ -128,9 +181,24 @@ export function showCity(city) {
     // CRIME
     // =========================
 
+    const population =
+        Number(city.population);
+
+    const incidents =
+        Number(city.incident_count);
+
+    const crimeRate =
+        Number.isFinite(population) &&
+        population > 0 &&
+        Number.isFinite(incidents)
+            ? (incidents / population) * 1000
+            : null;
+
     setText(
-        "incident-count",
-        formatNumber(city.incident_count)
+        "crime-rate",
+        crimeRate !== null
+            ? `${crimeRate.toFixed(1)} per 1,000`
+            : "—"
     );
 
 
@@ -145,25 +213,36 @@ export function showCity(city) {
 
     setText(
         "home-price",
-        formatCurrency(city.median_list_price)
+        formatWholeCurrency(city.median_list_price)
     );
 
     setText(
         "avg-list-price",
-        formatCurrency(city.avg_list_price)
+        formatWholeCurrency(city.avg_list_price)
     );
 
     setText(
         "median-price-sqft",
-        formatCurrency(city.median_price_per_sqft)
+        formatWholeCurrency(city.median_price_per_sqft)
     );
 
     setText(
         "avg-sqft",
         city.avg_sqft != null
-            ? `${Number(city.avg_sqft).toLocaleString()} sq ft`
+            ? `${Math.round(Number(city.avg_sqft)).toLocaleString()} sq ft`
             : "—"
     );
+
+
+    // =========================
+    // CLOSE ALL SECTIONS
+    // =========================
+
+    document
+        .querySelectorAll(".panel-section")
+        .forEach(section => {
+            section.classList.remove("expanded");
+        });
 
 }
 
@@ -194,7 +273,8 @@ function setPercent(id, value) {
         return;
     }
 
-    const number = Number(value);
+    const number =
+        Number(value);
 
     element.textContent =
         Number.isFinite(number)
@@ -218,7 +298,8 @@ function setTemperature(id, value) {
         return;
     }
 
-    const number = Number(value);
+    const number =
+        Number(value);
 
     element.textContent =
         Number.isFinite(number)
@@ -228,11 +309,28 @@ function setTemperature(id, value) {
 }
 
 
+function formatWholeCurrency(value) {
+
+    if (value === null || value === undefined) {
+        return "—";
+    }
+
+    const number =
+        Number(value);
+
+    return Number.isFinite(number)
+        ? `$${Math.round(number).toLocaleString()}`
+        : "—";
+
+}
+
+
 function combinePercent(...values) {
 
-    const numbers = values
-        .map(Number)
-        .filter(Number.isFinite);
+    const numbers =
+        values
+            .map(Number)
+            .filter(Number.isFinite);
 
     if (!numbers.length) {
         return null;
