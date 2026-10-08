@@ -30,7 +30,7 @@ export function setupMap() {
         zoom: 4,
 
         minZoom: 3,
-        maxZoom: 12,
+        maxZoom: 13,
 
         maxBounds: [
             [-124.848974, 24.396308],
@@ -197,7 +197,7 @@ export async function showCityOnMap(city) {
 
 
     // =========================
-    // CALCULATE CITY BOUNDS
+    // FIT MAP TO CITY
     // =========================
 
     const bounds =
@@ -207,9 +207,7 @@ export async function showCityOnMap(city) {
     if (bounds) {
 
         const panel =
-            document.getElementById(
-                "city-panel"
-            );
+            document.getElementById("city-panel");
 
 
         const panelWidth =
@@ -218,44 +216,29 @@ export async function showCityOnMap(city) {
                 : 760;
 
 
-        // Ask MapLibre what camera would
-        // fit the entire city while leaving
-        // room for the panel.
+        map.fitBounds(
+            bounds,
+            {
+                padding: {
+                    top: 80,
+                    bottom: 80,
+                    left: 80,
+                    right: panelWidth + 80
+                },
 
-        const camera =
-            map.cameraForBounds(
-                bounds,
-                {
-                    padding: {
-                        top: 70,
-                        bottom: 70,
-                        left: 70,
-                        right: panelWidth + 70
-                    },
+                maxZoom: 12.5,
 
-                    maxZoom: 11.5
-                }
-            );
-
-
-        // Actually animate to that camera.
-
-        if (camera) {
-
-            map.flyTo({
-                center: camera.center,
-                zoom: camera.zoom,
                 duration: 1200,
-                essential: true
-            });
 
-        }
+                essential: true
+            }
+        );
 
     }
 
 
     // =========================
-    // OPEN POPUP AFTER FLY
+    // OPEN POPUP
     // =========================
 
     map.once(
@@ -289,8 +272,6 @@ function getGeoJsonBounds(geojson) {
         }
 
 
-        // [longitude, latitude]
-
         if (
             value.length >= 2 &&
             typeof value[0] === "number" &&
@@ -313,17 +294,13 @@ function getGeoJsonBounds(geojson) {
     }
 
 
-    if (
-        geojson.type === "Feature"
-    ) {
+    if (geojson.type === "Feature") {
 
         walkCoordinates(
             geojson.geometry.coordinates
         );
 
-    } else if (
-        geojson.type === "FeatureCollection"
-    ) {
+    } else if (geojson.type === "FeatureCollection") {
 
         geojson.features.forEach(
             feature => {
@@ -339,9 +316,7 @@ function getGeoJsonBounds(geojson) {
             }
         );
 
-    } else if (
-        geojson.coordinates
-    ) {
+    } else if (geojson.coordinates) {
 
         walkCoordinates(
             geojson.coordinates
@@ -363,25 +338,10 @@ function getGeoJsonBounds(geojson) {
 function escapeHtml(value) {
 
     return String(value)
-        .replaceAll(
-            "&",
-            "&amp;"
-        )
-        .replaceAll(
-            "<",
-            "&lt;"
-        )
-        .replaceAll(
-            ">",
-            "&gt;"
-        )
-        .replaceAll(
-            '"',
-            "&quot;"
-        )
-        .replaceAll(
-            "'",
-            "&#039;"
-        );
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
 
 }

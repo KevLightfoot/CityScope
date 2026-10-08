@@ -111,12 +111,12 @@ body {
 
 .city-panel {
     position: absolute;
-
     top: 18px;
     right: 18px;
 
     width: 760px !important;
     max-width: 760px !important;
+
     max-height: calc(100vh - 36px);
 
     padding: 26px;
@@ -128,16 +128,26 @@ body {
     border-radius: 14px;
 
     box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.40),
-        0 2px 8px rgba(0, 0, 0, 0.25);
+        0 12px 35px rgba(0, 0, 0, 0.35);
 
     z-index: 1000;
 
     overflow-y: auto;
 }
 
-.city-panel.hidden {
-    display: none;
+
+.panel-sections {
+    display: grid !important;
+
+    grid-template-columns:
+        repeat(2, minmax(0, 1fr)) !important;
+
+    gap: 10px;
+}
+
+
+.panel-section:last-child {
+    grid-column: 1 / -1;
 }
 
 
