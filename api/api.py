@@ -46,7 +46,6 @@ def search_cities(q: str = ""):
         )
         .dropDuplicates()
         .orderBy("city", "state")
-        .limit(20)
         .collect()
     )
 
