@@ -10,9 +10,9 @@ export function setupMap() {
     }).setView([39.8283, -98.5795], 4);
 
     L.tileLayer(
-        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        "https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png",
         {
-            attribution: "&copy; OpenStreetMap contributors"
+            attribution: "&copy; OpenStreetMap contributors &copy; CARTO"
         }
     ).addTo(map);
 
