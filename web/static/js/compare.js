@@ -223,6 +223,62 @@ async function compareWith(city) {
                 <div>${formatValue(currentCity.median_age)}</div>
                 <div>${formatValue(comparisonCity.median_age)}</div>
 
+                <div>Under 18</div>
+                <div>${formatValue(currentCity.under_18_pct)}</div>
+                <div>${formatValue(comparisonCity.under_18_pct)}</div>
+
+                <div>Age 20–24</div>
+                <div>${formatValue(currentCity.age_20_24_pct)}</div>
+                <div>${formatValue(comparisonCity.age_20_24_pct)}</div>
+
+                <div>Age 25–34</div>
+                <div>${formatValue(currentCity.age_25_34_pct)}</div>
+                <div>${formatValue(comparisonCity.age_25_34_pct)}</div>
+
+                <div>Age 35–44</div>
+                <div>${formatValue(currentCity.age_35_44_pct)}</div>
+                <div>${formatValue(comparisonCity.age_35_44_pct)}</div>
+
+                <div>Age 45–54</div>
+                <div>${formatValue(currentCity.age_45_54_pct)}</div>
+                <div>${formatValue(comparisonCity.age_45_54_pct)}</div>
+
+                <div>Age 55–64</div>
+                <div>${formatValue(currentCity.age_55_64_pct)}</div>
+                <div>${formatValue(comparisonCity.age_55_64_pct)}</div>
+
+                <div>Age 65+</div>
+                <div>${formatValue(currentCity.age_65_plus_pct)}</div>
+                <div>${formatValue(comparisonCity.age_65_plus_pct)}</div>
+
+                <div>Male</div>
+                <div>${formatValue(currentCity.male_pct)}</div>
+                <div>${formatValue(comparisonCity.male_pct)}</div>
+
+                <div>Female</div>
+                <div>${formatValue(currentCity.female_pct)}</div>
+                <div>${formatValue(comparisonCity.female_pct)}</div>
+
+                <div>White</div>
+                <div>${formatValue(currentCity.white_pct)}</div>
+                <div>${formatValue(comparisonCity.white_pct)}</div>
+
+                <div>Black</div>
+                <div>${formatValue(currentCity.black_pct)}</div>
+                <div>${formatValue(comparisonCity.black_pct)}</div>
+
+                <div>Asian</div>
+                <div>${formatValue(currentCity.asian_pct)}</div>
+                <div>${formatValue(comparisonCity.asian_pct)}</div>
+
+                <div>Other Race</div>
+                <div>${formatValue(currentCity.other_race_pct)}</div>
+                <div>${formatValue(comparisonCity.other_race_pct)}</div>
+
+                <div>Labor Force</div>
+                <div>${formatNumber(currentCity.labor_force)}</div>
+                <div>${formatNumber(comparisonCity.labor_force)}</div>
+
                 <div>Unemployment</div>
                 <div>${formatPercent(currentCity.unemployment_rate)}</div>
                 <div>${formatPercent(comparisonCity.unemployment_rate)}</div>
