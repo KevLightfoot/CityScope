@@ -598,3 +598,12 @@ body {
 .compare-grid > :nth-last-child(-n + 3) {
     border-bottom: 0;
 }
+
+.compare-category {
+    grid-column: 1 / -1;
+    background: #1d2329;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+    color: #ffffff;
+}

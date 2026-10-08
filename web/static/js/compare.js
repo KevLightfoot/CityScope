@@ -174,51 +174,88 @@ async function compareWith(city) {
         table.innerHTML = `
             <div class="compare-grid">
 
+                <div class="compare-category">
+                    DEMOGRAPHICS
+                </div>
+
+                <div></div>
                 <div></div>
 
-                <strong>
-                    ${currentCity.city}
-                </strong>
+                <div>Population</div>
+                <div>${formatNumber(currentCity.population)}</div>
+                <div>${formatNumber(comparisonCity.population)}</div>
 
-                <strong>
-                    ${comparisonCity.city}
-                </strong>
+                <div>Median Age</div>
+                <div>${formatValue(currentCity.median_age)}</div>
+                <div>${formatValue(comparisonCity.median_age)}</div>
 
-                <span>Population</span>
-                <span>${formatNumber(currentCity.population)}</span>
-                <span>${formatNumber(comparisonCity.population)}</span>
+                <div>Unemployment</div>
+                <div>${formatPercent(currentCity.unemployment_rate)}</div>
+                <div>${formatPercent(comparisonCity.unemployment_rate)}</div>
 
-                <span>Median Age</span>
-                <span>${formatValue(currentCity.median_age)}</span>
-                <span>${formatValue(comparisonCity.median_age)}</span>
 
-                <span>Median Household Income</span>
-                <span>${formatCurrency(currentCity.median_household_income)}</span>
-                <span>${formatCurrency(comparisonCity.median_household_income)}</span>
+                <div class="compare-category">
+                    HOUSING
+                </div>
 
-                <span>Per Capita Income</span>
-                <span>${formatCurrency(currentCity.per_capita_income)}</span>
-                <span>${formatCurrency(comparisonCity.per_capita_income)}</span>
+                <div></div>
+                <div></div>
 
-                <span>Poverty Rate</span>
-                <span>${formatPercent(currentCity.poverty_rate)}</span>
-                <span>${formatPercent(comparisonCity.poverty_rate)}</span>
+                <div>Properties</div>
+                <div>${formatNumber(currentCity.property_count)}</div>
+                <div>${formatNumber(comparisonCity.property_count)}</div>
 
-                <span>Unemployment</span>
-                <span>${formatPercent(currentCity.unemployment_rate)}</span>
-                <span>${formatPercent(comparisonCity.unemployment_rate)}</span>
+                <div>Median List Price</div>
+                <div>${formatCurrency(currentCity.median_list_price)}</div>
+                <div>${formatCurrency(comparisonCity.median_list_price)}</div>
 
-                <span>Median Home Price</span>
-                <span>${formatCurrency(currentCity.median_list_price)}</span>
-                <span>${formatCurrency(comparisonCity.median_list_price)}</span>
+                <div>Average List Price</div>
+                <div>${formatCurrency(currentCity.avg_list_price)}</div>
+                <div>${formatCurrency(comparisonCity.avg_list_price)}</div>
 
-                <span>Average Home Price</span>
-                <span>${formatCurrency(currentCity.avg_list_price)}</span>
-                <span>${formatCurrency(comparisonCity.avg_list_price)}</span>
+                <div>Median Price / Sq Ft</div>
+                <div>${formatCurrency(currentCity.median_price_per_sqft)}</div>
+                <div>${formatCurrency(comparisonCity.median_price_per_sqft)}</div>
 
-                <span>Price / Sq Ft</span>
-                <span>${formatCurrency(currentCity.median_price_per_sqft)}</span>
-                <span>${formatCurrency(comparisonCity.median_price_per_sqft)}</span>
+                <div>Average Sq Ft</div>
+                <div>${formatNumber(currentCity.avg_sqft)}</div>
+                <div>${formatNumber(comparisonCity.avg_sqft)}</div>
+
+
+                <div class="compare-category">
+                    WEATHER
+                </div>
+
+                <div></div>
+                <div></div>
+
+                <div>Average Temperature</div>
+                <div>—</div>
+                <div>—</div>
+
+
+                <div class="compare-category">
+                    CRIME
+                </div>
+
+                <div></div>
+                <div></div>
+
+                <div>Reported Incidents</div>
+                <div>${formatNumber(currentCity.incident_count)}</div>
+                <div>${formatNumber(comparisonCity.incident_count)}</div>
+
+
+                <div class="compare-category">
+                    POINTS OF INTEREST
+                </div>
+
+                <div></div>
+                <div></div>
+
+                <div>Total POIs</div>
+                <div>${formatNumber(currentCity.poi_total_count)}</div>
+                <div>${formatNumber(comparisonCity.poi_total_count)}</div>
 
             </div>
         `;
