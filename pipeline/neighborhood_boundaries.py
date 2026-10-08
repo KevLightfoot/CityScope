@@ -10,6 +10,11 @@ from sedona.spark.sql import st_functions as st
 spark = (
     SparkSession.builder
     .appName("CityScope Neighborhood Boundaries")
+    .config(
+        "spark.jars.packages",
+        "org.apache.sedona:sedona-spark-4.0_2.13:1.9.1,"
+        "org.datasyslab:geotools-wrapper:1.7.0-28.5"
+    )
     .getOrCreate()
 )
 
