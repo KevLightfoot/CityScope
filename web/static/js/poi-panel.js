@@ -251,6 +251,90 @@ function renderResults(data) {
 
     results.innerHTML = "";
 
+    const nameCounts = new Map();
+
+    data.results.forEach(poi => {
+        const name = (poi.name || "").trim();
+
+        if (!name) {
+            return;
+        }
+
+        const key = name.toLowerCase();
+
+        if (!nameCounts.has(key)) {
+            nameCounts.set(key, {
+                name,
+                count: 0
+            });
+        }
+
+        nameCounts.get(key).count++;
+    });
+
+    for (const { name, count } of nameCounts.values()) {
+
+        if (count <= 10) {
+            continue;
+        }
+
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+
+        button.textContent =
+            `Select all "${name}" (${count})`;
+
+        button.onclick = async () => {
+
+            let all = [];
+            let currentOffset = 0;
+            let hasMore = true;
+
+            while (hasMore) {
+
+                const response =
+                    await getPOIs(
+                        "city",
+                        city.place_GEOID,
+                        category,
+                        {
+                            search: name,
+                            limit: 100,
+                            offset: currentOffset
+                        }
+                    );
+
+                all.push(
+                    ...response.results.filter(
+                        poi =>
+                            (poi.name || "").trim().toLowerCase() ===
+                            name.toLowerCase()
+                    )
+                );
+
+                hasMore = response.has_more;
+
+                currentOffset +=
+                    response.results.length;
+
+                if (!response.results.length) {
+                    break;
+                }
+            }
+
+            all.forEach(poi => {
+                selected.set(poi.id, poi);
+            });
+
+            renderResults(data);
+            updateSelectedButton();
+        };
+
+        results.appendChild(button);
+    }
+
     if (!data.results.length) {
 
         results.textContent =

@@ -103,3 +103,20 @@
     opacity: 0.5;
     cursor: not-allowed;
 }
+
+.poi-duplicate-button {
+    display: block;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    background: #1d2329;
+    border: 1px solid #303840;
+    border-radius: 5px;
+    color: #dce1e6;
+    cursor: pointer;
+    text-align: left;
+}
+
+.poi-duplicate-button:hover {
+    background: #2b323a;
+}
