@@ -35,3 +35,15 @@ export async function getBoundary(geoid) {
 
     return response.json();
 }
+
+export async function getWeather(geoid) {
+    const response = await fetch(
+        `${API_BASE}/api/weather/${encodeURIComponent(geoid)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Weather data not found");
+    }
+
+    return response.json();
+}

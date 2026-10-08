@@ -49,6 +49,15 @@ boundaries = (
 boundaries.count()
 
 
+weather_monthly = (
+    spark.read
+    .parquet("data/processed/weather_monthly")
+    .cache()
+)
+
+weather_monthly.count()
+
+
 @app.get("/api/cities")
 def search_cities(q: str = ""):
     q = q.strip()
@@ -128,4 +137,80 @@ def get_boundary(place_geoid: str):
         "NAME": row["NAME"],
         "NAMELSAD": row["NAMELSAD"],
         "geojson": row["geojson"]
+    }
+
+@app.get("/api/weather/{geoid}")
+def get_weather(geoid: str):
+
+    result = (
+        weather_monthly
+        .filter(col("place_GEOID") == geoid)
+        .select(
+            "month",
+            "avg_temp",
+            "avg_low",
+            "avg_high"
+        )
+        .orderBy("month")
+        .collect()
+    )
+
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail="Weather data not found"
+        )
+
+    monthly = [
+        {
+            "month": row["month"],
+            "avg_temp": row["avg_temp"],
+            "avg_low": row["avg_low"],
+            "avg_high": row["avg_high"]
+        }
+        for row in result
+    ]
+
+    seasons = {
+        "Winter": [12, 1, 2],
+        "Spring": [3, 4, 5],
+        "Summer": [6, 7, 8],
+        "Fall": [9, 10, 11]
+    }
+
+    seasonal = []
+
+    for season, months in seasons.items():
+
+        rows = [
+            row
+            for row in monthly
+            if row["month"] in months
+        ]
+
+        if not rows:
+            continue
+
+        def average(field):
+            values = [
+                row[field]
+                for row in rows
+                if row[field] is not None
+            ]
+
+            if not values:
+                return None
+
+            return sum(values) / len(values)
+
+        seasonal.append({
+            "season": season,
+            "avg_temp": average("avg_temp"),
+            "avg_low": average("avg_low"),
+            "avg_high": average("avg_high")
+        })
+
+    return {
+        "monthly": monthly,
+        "seasonal": seasonal
     }

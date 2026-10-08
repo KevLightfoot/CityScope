@@ -3,6 +3,8 @@ import {
     formatCurrency
 } from "./utils.js";
 
+import { getWeather } from "./api.js";
+
 
 export function setupPanel() {
 
@@ -176,6 +178,9 @@ export function showCity(city) {
         city.recorded_high
     );
 
+    // Additional monthly / seasonal weather
+    loadWeather(city.place_GEOID);
+
 
     // =========================
     // CRIME
@@ -341,4 +346,161 @@ function combinePercent(...values) {
         0
     );
 
+}
+
+async function loadWeather(geoid) {
+
+    const container =
+        document.getElementById("weather-data");
+
+    const monthlyButton =
+        document.getElementById("weather-monthly-button");
+
+    const seasonalButton =
+        document.getElementById("weather-seasonal-button");
+
+    if (!container || !monthlyButton || !seasonalButton) {
+        return;
+    }
+
+    container.innerHTML = "Loading...";
+
+    try {
+
+        const weather =
+            await getWeather(geoid);
+
+        function renderMonthly() {
+
+            monthlyButton.classList.add("active");
+            seasonalButton.classList.remove("active");
+
+            container.innerHTML =
+                weather.monthly
+                    .map(row => {
+
+                        const name =
+                            monthName(row.month);
+
+                        return weatherRow(
+                            name,
+                            row.avg_temp,
+                            row.avg_low,
+                            row.avg_high
+                        );
+
+                    })
+                    .join("");
+        }
+
+
+        function renderSeasonal() {
+
+            seasonalButton.classList.add("active");
+            monthlyButton.classList.remove("active");
+
+            container.innerHTML =
+                weather.seasonal
+                    .map(row => {
+
+                        return weatherRow(
+                            row.season,
+                            row.avg_temp,
+                            row.avg_low,
+                            row.avg_high
+                        );
+
+                    })
+                    .join("");
+        }
+
+
+        monthlyButton.onclick =
+            renderMonthly;
+
+        seasonalButton.onclick =
+            renderSeasonal;
+
+        renderMonthly();
+
+    } catch (error) {
+
+        console.error(error);
+
+        container.innerHTML =
+            `<div class="weather-error">
+                Weather data unavailable
+            </div>`;
+
+    }
+}
+
+
+function weatherRow(
+    label,
+    average,
+    low,
+    high
+) {
+
+    return `
+        <div class="weather-row">
+
+            <span class="weather-label">
+                ${label}
+            </span>
+
+            <span>
+                ${formatTemperature(average)}
+            </span>
+
+            <span>
+                ${formatTemperature(low)}
+            </span>
+
+            <span>
+                ${formatTemperature(high)}
+            </span>
+
+        </div>
+    `;
+}
+
+
+function formatTemperature(value) {
+
+    if (
+        value === null ||
+        value === undefined
+    ) {
+        return "—";
+    }
+
+    const number =
+        Number(value);
+
+    return Number.isFinite(number)
+        ? `${number.toFixed(1)}°`
+        : "—";
+}
+
+
+function monthName(month) {
+
+    const names = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December"
+    ];
+
+    return names[month - 1] || "Unknown";
 }
