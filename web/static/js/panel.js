@@ -1,7 +1,6 @@
 import {
     formatNumber,
-    formatCurrency,
-    formatPercent
+    formatCurrency
 } from "./utils.js";
 
 
@@ -168,7 +167,7 @@ export function showCity(city) {
 
 
     // =========================
-    // RESET SECTIONS
+    // CLOSE ALL SECTIONS
     // =========================
 
     document
@@ -176,15 +175,6 @@ export function showCity(city) {
         .forEach(section => {
             section.classList.remove("expanded");
         });
-
-
-    // Open demographics by default
-    const demographics =
-        document.querySelector(".panel-section");
-
-    if (demographics) {
-        demographics.classList.add("expanded");
-    }
 
 }
 
