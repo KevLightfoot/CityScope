@@ -89,6 +89,12 @@ export function setupMap() {
 
 export async function showCityOnMap(city) {
 
+    if (!map.isStyleLoaded()) {
+        await new Promise(resolve => {
+            map.once("load", resolve);
+        });
+    }
+
     const latitude =
         Number(city.latitude);
 
