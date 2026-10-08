@@ -16,7 +16,9 @@ import {
     isHousingVisible
 } from "./map.js";
 
-import { openPOIPanel } from "./poi-panel.js";
+import { openPOIPanel,
+        closePOIPanel
+} from "./poi-panel.js";
 
 let currentCity = null;
 let housingRequestId = 0;
@@ -102,6 +104,7 @@ export function setupPanel() {
 }
 
 export function showCity(city) {
+    closePOIPanel();
     currentCity = city;
     housingRequestId++;
 

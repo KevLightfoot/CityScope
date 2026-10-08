@@ -8,6 +8,7 @@ import {
     showPOIs
 } from "./map.js";
 
+
 let city = null;
 let category = null;
 let search = "";
@@ -105,6 +106,8 @@ function renderPanel() {
 
     document.body.appendChild(panel);
 
+    positionPanel();
+
     document
         .getElementById("poi-close")
         .onclick = closePOIPanel;
@@ -152,6 +155,31 @@ function renderPanel() {
 }
 
 
+function positionPanel() {
+
+    const panel =
+        document.getElementById("poi-browser-panel");
+
+    const cityPanel =
+        document.getElementById("city-panel");
+
+    if (!panel || !cityPanel) {
+        return;
+    }
+
+    const rect =
+        cityPanel.getBoundingClientRect();
+
+    panel.style.left =
+        `${Math.max(18, rect.left - panel.offsetWidth - 18)}px`;
+
+    panel.style.right = "auto";
+
+    panel.style.top =
+        `${rect.top}px`;
+}
+
+
 async function loadPOIs() {
 
     const results =
@@ -178,12 +206,13 @@ async function loadPOIs() {
             options.startsWith = letter;
         }
 
-        const data = await getPOIs(
-            "city",
-            city.place_GEOID,
-            category,
-            options
-        );
+        const data =
+            await getPOIs(
+                "city",
+                city.place_GEOID,
+                category,
+                options
+            );
 
         renderResults(data);
 
