@@ -1,6 +1,6 @@
 import { searchCities, getCity } from "./api.js";
-import { showCityOnMap } from "./map.js";
-import { showCity } from "./panel.js";
+import { showCityOnMap } from "./map.js?v=3";
+import { showCity } from "./panel.js?v=3";
 import { escapeHtml } from "./utils.js";
 
 export function setupSearch() {
