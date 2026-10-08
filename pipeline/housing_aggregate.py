@@ -1,6 +1,7 @@
 """
 housing_aggregate.py aggregates cleaned housing listings into
-city-level housing summaries for CityScope.
+city-level housing summaries and city-indexed property data
+for CityScope.
 """
 
 from pyspark.sql import SparkSession
@@ -13,11 +14,13 @@ spark = (
     .master("local[4]")
     .getOrCreate()
 )
+
 spark.sparkContext.setLogLevel("WARN")
+
 
 # Read cleaned housing data.
 housing_df = (
-    spark.read.parquet("data/processed/housing/")
+    spark.read.parquet("data/processed/housing_clean")
 )
 
 
@@ -103,7 +106,7 @@ housing_aggregated = (
         # Average listing price.
         avg("list_price").alias("avg_list_price"),
 
-        # Price per square foot.
+        # Median price per square foot.
         expr(
             """
             percentile_approx(
@@ -124,7 +127,55 @@ housing_aggregated = (
     )
 )
 
+
 # Save city-level housing summaries as Parquet.
-housing_aggregated.write.mode("overwrite").parquet("data/processed/housing_city")
+housing_aggregated.write \
+    .mode("overwrite") \
+    .parquet("data/processed/housing_city")
+
+
+# Prepare individual properties for map plotting.
+#
+# Keep the useful listing information rather than reducing the
+# records to only the fields currently displayed by the frontend.
+housing_properties = (
+    housing_df
+    .select(
+        "id",
+        "street",
+        "unit",
+        "city",
+        "state",
+        "zip",
+        "lat",
+        "lng",
+        "property_type",
+        "beds",
+        "baths",
+        "sqft",
+        "lot_sqft",
+        "year_built",
+        "status",
+        "list_price",
+        "county_fips",
+        "city_key",
+        "state_key"
+    )
+    .filter(
+        col("lat").isNotNull() &
+        col("lng").isNotNull()
+    )
+)
+
+
+# Save individual properties partitioned by state and city.
+#
+# This allows the API to retrieve only the selected city's
+# properties instead of scanning the entire housing dataset.
+housing_properties.write \
+    .mode("overwrite") \
+    .partitionBy("state_key", "city_key") \
+    .parquet("data/processed/housing_city_properties")
+
 
 spark.stop()
