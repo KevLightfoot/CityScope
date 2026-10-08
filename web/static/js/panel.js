@@ -59,7 +59,7 @@ export function showCity(city) {
     setText("median-age", formatNumber(city.median_age));
 
     setPercent("under-18", city.under_18_pct);
-    setPercent("age-18-24", city.age_18_24_pct);
+    setPercent("age-20-24", city.age_20_24_pct);
     setPercent("age-25-34", city.age_25_34_pct);
     setPercent("age-35-44", city.age_35_44_pct);
     setPercent("age-45-54", city.age_45_54_pct);
