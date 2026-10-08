@@ -5,8 +5,7 @@ import {
 
 import {
     getWeather,
-    getHousing,
-    getPOIs
+    getHousing
 } from "./api.js";
 
 import {
@@ -14,18 +13,13 @@ import {
     showHousingProperties,
     hideHousingProperties,
     clearHousingProperties,
-    isHousingVisible,
-    setPOIs,
-    showPOIs,
-    hidePOIs,
-    clearPOIs,
-    isPOIVisible
+    isHousingVisible
 } from "./map.js";
+
+import { openPOIPanel } from "./poi-panel.js";
 
 let currentCity = null;
 let housingRequestId = 0;
-let poiRequestId = 0;
-let activePoiCategory = null;
 
 export function setupPanel() {
 
@@ -89,83 +83,21 @@ export function setupPanel() {
             }
         });
     }
-
+    
     document
         .querySelectorAll(".poi-button")
         .forEach(button => {
+            button.addEventListener("click", () => {
+                const category = button.dataset.category;
 
-            button.addEventListener("click", async () => {
-
-                if (!currentCity) {
+                if (!category || !currentCity) {
                     return;
                 }
 
-                const category =
-                    button.dataset.category;
-
-                if (!category) {
-                    return;
-                }
-
-                if (
-                    activePoiCategory === category &&
-                    isPOIVisible()
-                ) {
-                    hidePOIs();
-                    button.classList.remove("active");
-                    return;
-                }
-
-                document
-                    .querySelectorAll(".poi-button")
-                    .forEach(other => {
-                        other.classList.remove("active");
-                    });
-
-                button.classList.add("active");
-
-                const requestId =
-                    ++poiRequestId;
-
-                button.textContent = "Loading...";
-
-                try {
-
-                    const pois =
-                        await getPOIs(
-                            "city",
-                            currentCity.place_GEOID,
-                            category,
-                            {
-                                limit: 100
-                            }
-                        );
-
-                    if (requestId !== poiRequestId) {
-                        return;
-                    }
-
-                    setPOIs(pois.results);
-
-                    showPOIs(category);
-
-                    activePoiCategory = category;
-
-                } catch (error) {
-
-                    console.error(error);
-
-                } finally {
-
-                    button.textContent =
-                        category.charAt(0).toUpperCase() +
-                        category.slice(1);
-
-                }
-
+                openPOIPanel(category, currentCity);
             });
-
         });
+
 
 }
 
@@ -174,10 +106,6 @@ export function showCity(city) {
     housingRequestId++;
 
     clearHousingProperties();
-
-    poiRequestId++;
-    clearPOIs();
-    activePoiCategory = null;
 
     const housingButton =
         document.getElementById("show-housing-button");
