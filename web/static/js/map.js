@@ -37,6 +37,22 @@ export function setupMap() {
                     "none"
                 );
             }
+
+            if (
+                layer.type === "line" &&
+                (
+                    layer.id.includes("road") ||
+                    layer.id.includes("street") ||
+                    layer.id.includes("highway") ||
+                    layer.id.includes("transport")
+                )
+            ) {
+                map.setLayoutProperty(
+                    layer.id,
+                    "visibility",
+                    "none"
+                );
+            }
         });
     });
 
