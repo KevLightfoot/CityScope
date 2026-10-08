@@ -54,8 +54,6 @@ async function openComparePanel() {
         <div class="compare-current">
             <strong>
                 ${currentCity.city}, ${currentCity.state}
-                <span class="compare-vs">vs</span>
-                ${comparisonCity.city}, ${comparisonCity.state}
             </strong>
         </div>
 
@@ -164,6 +162,12 @@ async function compareWith(city) {
     const table =
         document.getElementById("compare-table");
 
+    const results =
+        document.getElementById("compare-results");
+
+    const searchInput =
+        document.getElementById("compare-search");
+
     table.textContent = "Loading...";
 
     try {
@@ -174,6 +178,29 @@ async function compareWith(city) {
                 city.state
             );
 
+        /*
+         * Update the header
+         */
+        const current =
+            document.querySelector(".compare-current");
+
+        current.innerHTML = `
+            <strong>
+                ${currentCity.city}, ${currentCity.state}
+                <span class="compare-vs">vs</span>
+                ${comparisonCity.city}, ${comparisonCity.state}
+            </strong>
+        `;
+
+        /*
+         * Hide the search after selecting a city
+         */
+        searchInput.style.display = "none";
+        results.style.display = "none";
+
+        /*
+         * Build comparison table
+         */
         table.innerHTML = `
             <div class="compare-grid">
 
@@ -238,6 +265,14 @@ async function compareWith(city) {
 
             </div>
         `;
+
+        /*
+         * Load weather after the table exists
+         */
+        loadComparisonWeather(
+            currentCity,
+            comparisonCity
+        );
 
     } catch (error) {
 
