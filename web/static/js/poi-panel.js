@@ -5,7 +5,9 @@ import {
 
 import {
     setPOIs,
-    showPOIs
+    showPOIs, 
+    hidePOIs,
+    closePOIPopup
 } from "./map.js";
 
 
@@ -101,10 +103,18 @@ function renderPanel() {
                 Show All ${title(category)} on Map
             </button>
 
+            <button id="poi-reset">
+                Reset POIs
+            </button>
+
         </div>
     `;
 
     document.body.appendChild(panel);
+
+    panel.addEventListener("click", () => {
+        closePOIPopup();
+    });
 
     positionPanel();
 
@@ -152,6 +162,14 @@ function renderPanel() {
     document
         .getElementById("poi-all")
         .onclick = showAll;
+
+    document
+        .getElementById("poi-reset")
+        .onclick = () => {
+            closePOIPopup();
+            hidePOIs();
+            setPOIs([]);
+        };
 }
 
 
@@ -171,7 +189,7 @@ function positionPanel() {
         cityPanel.getBoundingClientRect();
 
     panel.style.left =
-        `${Math.max(18, rect.left - panel.offsetWidth - 18)}px`;
+        `${Math.max(18, rect.left - panel.offsetWidth - 4)}px`;
 
     panel.style.right = "auto";
 
@@ -406,7 +424,6 @@ async function showAll() {
 
     showPOIs(category);
 }
-
 
 export function closePOIPanel() {
 

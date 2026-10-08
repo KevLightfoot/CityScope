@@ -8,6 +8,7 @@ let housingVisible = false;
 let poiFeatures = [];
 let poiVisible = false;
 let activePoiCategory = null;
+let poiPopup = null;
 
 
 export function setupMap() {
@@ -596,7 +597,7 @@ export function showPOIs(category) {
 
             paint: {
                 "circle-radius": 5,
-                "circle-color": "#4da6ff",
+                "circle-color": "#3CF527",
                 "circle-opacity": 0.85,
                 "circle-stroke-color": "#ffffff",
                 "circle-stroke-width": 1
@@ -608,10 +609,11 @@ export function showPOIs(category) {
             "poi-properties",
             event => {
 
-                const poi =
-                    event.features[0].properties;
+                if (poiPopup) {
+                    poiPopup.remove();
+                }
 
-                new maplibregl.Popup({
+                poiPopup = new maplibregl.Popup({
                     offset: 8
                 })
                     .setLngLat(event.lngLat)
@@ -692,4 +694,11 @@ export function clearPOIs() {
 
 export function isPOIVisible() {
     return poiVisible;
+}
+
+export function closePOIPopup() {
+    if (poiPopup) {
+        poiPopup.remove();
+        poiPopup = null;
+    }
 }
