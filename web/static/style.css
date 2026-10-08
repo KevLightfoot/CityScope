@@ -423,11 +423,11 @@ body {
     }
 
     .panel-sections {
-        grid-template-columns: 1fr;
+        grid-template-columns: 1fr 1fr;
     }
 
     .panel-section:last-child {
-        grid-column: auto;
+        grid-column: 1 / -1;
     }
 
     .poi-section {
