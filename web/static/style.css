@@ -319,7 +319,7 @@ body {
    ========================= */
 
 .poi-buttons {
-    display: grid;
+    display: none;
 
     grid-template-columns:
         repeat(4, minmax(0, 1fr));
@@ -327,6 +327,10 @@ body {
     gap: 8px;
 
     padding: 0 9px 9px 9px;
+}
+
+.panel-section.expanded .poi-buttons {
+    display: grid;
 }
 
 .poi-button {
