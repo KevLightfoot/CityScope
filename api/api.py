@@ -1,12 +1,7 @@
-"""
-api.py provides the CityScope API for city search,
-city data, and city boundary geometry
-"""
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import lower, col
-
 
 app = FastAPI(title="CityScope API")
 
@@ -17,8 +12,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-
-# Create Spark session
 spark = (
     SparkSession.builder
     .appName("CityScope API")
@@ -29,7 +22,10 @@ spark = (
 spark.sparkContext.setLogLevel("ERROR")
 
 
-# Read processed city data
+# ---------------------------------------------------------
+# CITY DATA
+# ---------------------------------------------------------
+
 cities = (
     spark.read
     .parquet("data/processed/cityscope_city")
@@ -39,15 +35,9 @@ cities = (
 cities.count()
 
 
-# Read processed place boundaries
-boundaries = (
-    spark.read
-    .parquet("data/processed/place_boundaries")
-    .cache()
-)
-
-boundaries.count()
-
+# ---------------------------------------------------------
+# WEATHER DATA
+# ---------------------------------------------------------
 
 weather_monthly = (
     spark.read
@@ -57,6 +47,20 @@ weather_monthly = (
 
 weather_monthly.count()
 
+
+# ---------------------------------------------------------
+# HOUSING PROPERTY DATA
+# ---------------------------------------------------------
+
+housing_properties = (
+    spark.read
+    .parquet("data/processed/housing_city_properties")
+)
+
+
+# ---------------------------------------------------------
+# CITY SEARCH
+# ---------------------------------------------------------
 
 @app.get("/api/cities")
 def search_cities(q: str = ""):
@@ -70,10 +74,7 @@ def search_cities(q: str = ""):
         .filter(
             lower(col("city")).contains(q.lower())
         )
-        .select(
-            "city",
-            "state"
-        )
+        .select("city", "state")
         .dropDuplicates()
         .orderBy("city", "state")
         .collect()
@@ -87,6 +88,10 @@ def search_cities(q: str = ""):
         for row in results
     ]
 
+
+# ---------------------------------------------------------
+# CITY DATA
+# ---------------------------------------------------------
 
 @app.get("/api/city/{city}/{state}")
 def get_city(city: str, state: str):
@@ -109,16 +114,29 @@ def get_city(city: str, state: str):
     return result[0].asDict()
 
 
-@app.get("/api/boundary/{place_geoid}")
-def get_boundary(place_geoid: str):
+# ---------------------------------------------------------
+# CITY BOUNDARY
+# ---------------------------------------------------------
+
+@app.get("/api/boundary/{geoid}")
+def get_boundary(geoid: str):
+    from sedona.spark import SedonaContext
+
+    sedona = SedonaContext.create(spark)
+
+    places = (
+        sedona.read
+        .parquet("data/processed/places")
+    )
+
     result = (
-        boundaries
-        .filter(col("GEOID") == place_geoid)
+        places
+        .filter(col("GEOID") == geoid)
         .select(
             "GEOID",
             "NAME",
             "NAMELSAD",
-            "geojson"
+            "geometry"
         )
         .limit(1)
         .collect()
@@ -132,19 +150,29 @@ def get_boundary(place_geoid: str):
 
     row = result[0]
 
+    geojson = row["geometry"].__geo_interface__
+
+    import json
+
     return {
         "GEOID": row["GEOID"],
         "NAME": row["NAME"],
         "NAMELSAD": row["NAMELSAD"],
-        "geojson": row["geojson"]
+        "geojson": json.dumps(geojson)
     }
+
+
+# ---------------------------------------------------------
+# WEATHER
+# ---------------------------------------------------------
 
 @app.get("/api/weather/{geoid}")
 def get_weather(geoid: str):
-
     result = (
         weather_monthly
-        .filter(col("place_GEOID") == geoid)
+        .filter(
+            col("place_GEOID") == geoid
+        )
         .select(
             "month",
             "avg_temp",
@@ -181,7 +209,6 @@ def get_weather(geoid: str):
     seasonal = []
 
     for season, months in seasons.items():
-
         rows = [
             row
             for row in monthly
@@ -214,3 +241,45 @@ def get_weather(geoid: str):
         "monthly": monthly,
         "seasonal": seasonal
     }
+
+
+# ---------------------------------------------------------
+# HOUSING PROPERTIES
+# ---------------------------------------------------------
+
+@app.get("/api/housing/{city}/{state}")
+def get_housing(city: str, state: str):
+    city_key = city.strip().lower()
+    state_key = state.strip().lower()
+
+    result = (
+        housing_properties
+        .filter(
+            (col("city_key") == city_key) &
+            (col("state_key") == state_key)
+        )
+        .select(
+            "id",
+            "street",
+            "unit",
+            "city",
+            "state",
+            "zip",
+            "lat",
+            "lng",
+            "property_type",
+            "beds",
+            "baths",
+            "sqft",
+            "lot_sqft",
+            "year_built",
+            "status",
+            "list_price"
+        )
+        .collect()
+    )
+
+    return [
+        row.asDict()
+        for row in result
+    ]
