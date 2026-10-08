@@ -4,19 +4,20 @@
 
 html,
 body {
+    margin: 0;
     width: 100%;
     height: 100%;
-    margin: 0;
-    font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden;
+    font-family: Arial, sans-serif;
 }
 
 body {
-    overflow: hidden;
+    background: #ffffff;
 }
 
 #map {
-    width: 100%;
-    height: 100%;
+    position: absolute;
+    inset: 0;
 }
 
 
@@ -29,79 +30,72 @@ body {
     top: 18px;
     left: 50%;
     transform: translateX(-50%);
-    width: 400px;
-    z-index: 1000;
+    width: 360px;
+    z-index: 2000;
 }
 
 #city-search {
     width: 100%;
-    height: 48px;
-    padding: 0 16px;
+    height: 42px;
+    padding: 0 14px;
 
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
 
     background: #ffffff;
-    color: #222222;
+    color: #222;
 
-    font-size: 16px;
+    font-size: 14px;
+
+    box-shadow:
+        0 2px 10px rgba(0, 0, 0, 0.20);
+
     outline: none;
-
-    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
-}
-
-#city-search:focus {
-    box-shadow: 0 3px 16px rgba(0, 0, 0, 0.28);
 }
 
 #search-results {
-    display: none;
-
-    margin-top: 6px;
-
-    width: 100%;
-    max-height: 360px;
-
-    overflow-y: auto;
-    overflow-x: hidden;
+    margin-top: 4px;
 
     background: #ffffff;
-    border-radius: 10px;
 
-    box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+
+    box-shadow:
+        0 4px 15px rgba(0, 0, 0, 0.20);
+
+    overflow: hidden;
+
+    display: none;
 }
 
 .search-result {
-    padding: 12px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    padding: 10px 14px;
 
     cursor: pointer;
 
-    border-bottom: 1px solid #eeeeee;
-
-    font-size: 15px;
-}
-
-.search-result:last-child {
-    border-bottom: none;
+    font-size: 13px;
 }
 
 .search-result:hover {
-    background: #f3f3f3;
+    background: #f1f3f5;
 }
 
 .search-result-city {
     font-weight: 600;
-    color: #222222;
 }
 
 .search-result-state {
-    color: #777777;
-    margin-left: 4px;
+    color: #777;
 }
 
 .search-message {
-    padding: 14px 16px;
-    color: #777777;
+    padding: 12px 14px;
+    color: #777;
+    font-size: 13px;
 }
 
 
@@ -111,6 +105,7 @@ body {
 
 .city-panel {
     position: absolute;
+
     top: 18px;
     right: 18px;
 
@@ -136,6 +131,30 @@ body {
 }
 
 
+/* =========================
+   PANEL HEADER
+   ========================= */
+
+.city-panel h1 {
+    margin: 0 0 4px 0;
+
+    font-size: 24px;
+    line-height: 1.2;
+}
+
+.city-panel .state {
+    margin-bottom: 18px;
+
+    color: #aeb6bf;
+
+    font-size: 13px;
+}
+
+
+/* =========================
+   PANEL SECTIONS
+   ========================= */
+
 .panel-sections {
     display: grid !important;
 
@@ -145,131 +164,44 @@ body {
     gap: 10px;
 }
 
-
-.panel-section:last-child {
-    grid-column: 1 / -1;
-}
-
-
-/* =========================
-   PANEL HEADER
-   ========================= */
-
-.close-button {
-    position: absolute;
-
-    top: 10px;
-    right: 14px;
-
-    border: none !important;
-    background: transparent !important;
-
-    color: #aeb6bf !important;
-
-    font-size: 28px;
-    line-height: 1;
-
-    cursor: pointer;
-}
-
-.close-button:hover {
-    color: #ffffff !important;
-}
-
-.city-panel h2 {
-    margin: 0 40px 3px 0;
-
-    color: #ffffff !important;
-
-    font-size: 28px;
-    font-weight: 700;
-}
-
-#city-location {
-    margin: 0 0 22px;
-
-    color: #aeb6bf !important;
-
-    font-size: 15px;
-}
-
-
-/* =========================
-   2 x 2 SECTION GRID
-   ========================= */
-
-.panel-sections {
-    display: grid !important;
-
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
-
-    gap: 10px;
-}
-
-
-/* =========================
-   SECTION CARDS
-   ========================= */
-
 .panel-section {
     min-width: 0;
 
-    border: 1px solid #3b444e !important;
-    border-radius: 10px;
+    background: #242a31;
+
+    border: 1px solid #39414a;
+
+    border-radius: 8px;
 
     overflow: hidden;
-
-    background: #252b32 !important;
-}
-
-
-/* POI spans both columns */
-
-.panel-section:last-child {
-    grid-column: 1 / -1;
 }
 
 
 /* =========================
-   SECTION HEADERS
+   SECTION HEADER
    ========================= */
 
-.section-header {
-    width: 100%;
-
+.panel-section-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    padding: 15px 16px;
-
-    border: none !important;
-
-    background: #252b32 !important;
-    color: #f2f4f7 !important;
-
-    font-size: 15px;
-    font-weight: 600;
-
-    text-align: left;
+    padding: 11px 13px;
 
     cursor: pointer;
+
+    font-size: 13px;
+    font-weight: 600;
+
+    color: #f2f4f7;
 }
 
-.section-header:hover {
-    background: #2d343c !important;
+.panel-section-header:hover {
+    background: #2b323a;
 }
 
-.section-arrow {
-    color: #aeb6bf !important;
-
-    font-size: 17px;
-
-    transition: transform 0.15s ease;
-}
-
-.panel-section.expanded .section-arrow {
-    transform: rotate(180deg);
+.panel-section-header span:last-child {
+    color: #aeb6bf;
 }
 
 
@@ -277,96 +209,84 @@ body {
    SECTION CONTENT
    ========================= */
 
-.section-content {
+.panel-section-content {
     display: none;
 
-    padding: 0 12px 12px;
-
-    background: #252b32 !important;
+    padding: 0 8px 8px 8px;
 }
 
-.panel-section.expanded .section-content {
-    display: grid;
-
-    gap: 7px;
+.panel-section.expanded .panel-section-content {
+    display: block;
 }
 
 
 /* =========================
-   STAT CARDS
+   STAT ROWS
    ========================= */
 
-.stat {
+.stat-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
 
-    min-height: 42px;
+    min-height: 30px;
 
-    padding: 9px 11px;
+    margin-top: 5px;
+    padding: 0 9px;
 
-    background: #1e2329 !important;
+    background: #1d2329;
 
-    border: 1px solid #303740 !important;
-    border-radius: 7px;
+    border: 1px solid #303840;
+    border-radius: 5px;
 }
 
-.stat span {
-    margin: 0;
-
-    color: #aeb6bf !important;
-
-    font-size: 13px;
+.stat-row span {
+    color: #9fa8b2;
+    font-size: 11px;
 }
 
-.stat strong {
-    color: #f4f6f8 !important;
-
-    font-size: 15px;
-    font-weight: 600;
-
-    text-align: right;
+.stat-row strong {
+    color: #f2f4f7;
+    font-size: 11px;
 }
 
 
 /* =========================
-   POI BUTTONS
+   POI SECTION
    ========================= */
 
-.poi-section {
-    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
+.panel-section:last-child {
+    grid-column: 1 / -1;
+}
+
+.poi-buttons {
+    display: grid;
+
+    grid-template-columns:
+        repeat(4, minmax(0, 1fr));
+
+    gap: 7px;
+
+    padding: 0 8px 8px 8px;
 }
 
 .poi-button {
-    min-width: 0;
+    padding: 8px 6px;
 
-    padding: 11px 8px;
+    background: #1d2329;
 
-    border: 1px solid #3a424b !important;
-    border-radius: 7px;
+    border: 1px solid #303840;
+    border-radius: 5px;
 
-    background: #1e2329 !important;
-    color: #dfe3e7 !important;
+    color: #dce1e6;
 
-    font-size: 12px;
-    font-weight: 600;
+    font-size: 11px;
 
     cursor: pointer;
-
-    transition:
-        background 0.15s ease,
-        border-color 0.15s ease,
-        color 0.15s ease;
 }
 
 .poi-button:hover {
-    background: #2d353e !important;
-    border-color: #505a65 !important;
-    color: #ffffff !important;
-}
-
-.poi-button:active {
-    background: #353e48 !important;
+    background: #2b323a;
 }
 
 
@@ -379,32 +299,10 @@ body {
 }
 
 .city-panel::-webkit-scrollbar-track {
-    background: #1b2025;
+    background: transparent;
 }
 
 .city-panel::-webkit-scrollbar-thumb {
-    background: #424a53;
-    border-radius: 8px;
-}
-
-.city-panel::-webkit-scrollbar-thumb:hover {
-    background: #555f6a;
-}
-
-
-/* =========================
-   LEAFLET
-   ========================= */
-
-.leaflet-popup-content {
-    margin: 12px 16px;
-}
-
-.popup-city {
-    font-weight: 700;
-    font-size: 16px;
-}
-
-.popup-state {
-    color: #777;
+    background: #3c454e;
+    border-radius: 4px;
 }
