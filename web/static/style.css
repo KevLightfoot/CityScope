@@ -41,10 +41,10 @@ body {
     border: none;
     border-radius: 10px;
 
-    background: white;
+    background: #ffffff;
+    color: #222222;
 
     font-size: 16px;
-
     outline: none;
 
     box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
@@ -65,7 +65,7 @@ body {
     overflow-y: auto;
     overflow-x: hidden;
 
-    background: white;
+    background: #ffffff;
     border-radius: 10px;
 
     box-shadow: 0 3px 14px rgba(0, 0, 0, 0.2);
@@ -76,7 +76,7 @@ body {
 
     cursor: pointer;
 
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid #eeeeee;
 
     font-size: 15px;
 }
@@ -91,16 +91,17 @@ body {
 
 .search-result-city {
     font-weight: 600;
+    color: #222222;
 }
 
 .search-result-state {
-    color: #777;
+    color: #777777;
     margin-left: 4px;
 }
 
 .search-message {
     padding: 14px 16px;
-    color: #777;
+    color: #777777;
 }
 
 
@@ -114,21 +115,21 @@ body {
     top: 18px;
     right: 18px;
 
-    width: 760px;
-    max-width: calc(100vw - 36px);
+    width: 760px !important;
+    max-width: 760px !important;
     max-height: calc(100vh - 36px);
 
     padding: 26px;
 
-    background: #20252b;
-    color: #f2f4f7;
+    background: #20252b !important;
+    color: #f2f4f7 !important;
 
-    border: 1px solid #343b43;
+    border: 1px solid #39414a;
     border-radius: 14px;
 
     box-shadow:
-        0 8px 30px rgba(0, 0, 0, 0.35),
-        0 2px 8px rgba(0, 0, 0, 0.2);
+        0 8px 30px rgba(0, 0, 0, 0.40),
+        0 2px 8px rgba(0, 0, 0, 0.25);
 
     z-index: 1000;
 
@@ -150,10 +151,10 @@ body {
     top: 10px;
     right: 14px;
 
-    border: none;
-    background: none;
+    border: none !important;
+    background: transparent !important;
 
-    color: #9da5ae;
+    color: #aeb6bf !important;
 
     font-size: 28px;
     line-height: 1;
@@ -162,13 +163,13 @@ body {
 }
 
 .close-button:hover {
-    color: #ffffff;
+    color: #ffffff !important;
 }
 
 .city-panel h2 {
     margin: 0 40px 3px 0;
 
-    color: #ffffff;
+    color: #ffffff !important;
 
     font-size: 28px;
     font-weight: 700;
@@ -177,20 +178,20 @@ body {
 #city-location {
     margin: 0 0 22px;
 
-    color: #9da5ae;
+    color: #aeb6bf !important;
 
     font-size: 15px;
 }
 
 
 /* =========================
-   PANEL GRID
+   2 x 2 SECTION GRID
    ========================= */
 
 .panel-sections {
-    display: grid;
+    display: grid !important;
 
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
 
     gap: 10px;
 }
@@ -203,18 +204,16 @@ body {
 .panel-section {
     min-width: 0;
 
-    border: 1px solid #39414a;
+    border: 1px solid #3b444e !important;
     border-radius: 10px;
 
     overflow: hidden;
 
-    background: #252b32;
+    background: #252b32 !important;
 }
 
 
-/*
-   POI spans the entire width.
-*/
+/* POI spans both columns */
 
 .panel-section:last-child {
     grid-column: 1 / -1;
@@ -234,10 +233,10 @@ body {
 
     padding: 15px 16px;
 
-    border: none;
+    border: none !important;
 
-    background: #252b32;
-    color: #f2f4f7;
+    background: #252b32 !important;
+    color: #f2f4f7 !important;
 
     font-size: 15px;
     font-weight: 600;
@@ -248,11 +247,11 @@ body {
 }
 
 .section-header:hover {
-    background: #2b323a;
+    background: #2d343c !important;
 }
 
 .section-arrow {
-    color: #9da5ae;
+    color: #aeb6bf !important;
 
     font-size: 17px;
 
@@ -272,6 +271,8 @@ body {
     display: none;
 
     padding: 0 12px 12px;
+
+    background: #252b32 !important;
 }
 
 .panel-section.expanded .section-content {
@@ -282,7 +283,7 @@ body {
 
 
 /* =========================
-   STATS
+   STAT CARDS
    ========================= */
 
 .stat {
@@ -294,23 +295,22 @@ body {
 
     padding: 9px 11px;
 
-    background: #1e2329;
+    background: #1e2329 !important;
 
+    border: 1px solid #303740 !important;
     border-radius: 7px;
-
-    border: 1px solid #303740;
 }
 
 .stat span {
     margin: 0;
 
-    color: #aeb6bf;
+    color: #aeb6bf !important;
 
     font-size: 13px;
 }
 
 .stat strong {
-    color: #f4f6f8;
+    color: #f4f6f8 !important;
 
     font-size: 15px;
     font-weight: 600;
@@ -320,11 +320,11 @@ body {
 
 
 /* =========================
-   POI SECTION
+   POI BUTTONS
    ========================= */
 
 .poi-section {
-    grid-template-columns: repeat(6, 1fr);
+    grid-template-columns: repeat(6, minmax(0, 1fr)) !important;
 }
 
 .poi-button {
@@ -332,12 +332,11 @@ body {
 
     padding: 11px 8px;
 
-    border: 1px solid #3a424b;
+    border: 1px solid #3a424b !important;
     border-radius: 7px;
 
-    background: #1e2329;
-
-    color: #dfe3e7;
+    background: #1e2329 !important;
+    color: #dfe3e7 !important;
 
     font-size: 12px;
     font-weight: 600;
@@ -351,14 +350,13 @@ body {
 }
 
 .poi-button:hover {
-    background: #2d353e;
-    border-color: #505a65;
-
-    color: #ffffff;
+    background: #2d353e !important;
+    border-color: #505a65 !important;
+    color: #ffffff !important;
 }
 
 .poi-button:active {
-    background: #353e48;
+    background: #353e48 !important;
 }
 
 
@@ -372,7 +370,6 @@ body {
 
 .city-panel::-webkit-scrollbar-track {
     background: #1b2025;
-    border-radius: 8px;
 }
 
 .city-panel::-webkit-scrollbar-thumb {
@@ -401,8 +398,3 @@ body {
 .popup-state {
     color: #777;
 }
-
-
-/* =========================
-   MOBILE
-   ========================= */
