@@ -375,22 +375,27 @@ async function loadWeather(geoid) {
             monthlyButton.classList.add("active");
             seasonalButton.classList.remove("active");
 
-            container.innerHTML =
-                weather.monthly
-                    .map(row => {
+            container.innerHTML = `
+                <div class="weather-header">
+                    <span></span>
+                    <span>Average</span>
+                    <span>Low</span>
+                    <span>High</span>
+                </div>
+            ` +
+            weather.monthly
+                .map(row => {
+                    const name =
+                        monthName(row.month);
 
-                        const name =
-                            monthName(row.month);
-
-                        return weatherRow(
-                            name,
-                            row.avg_temp,
-                            row.avg_low,
-                            row.avg_high
-                        );
-
-                    })
-                    .join("");
+                    return weatherRow(
+                        name,
+                        row.avg_temp,
+                        row.avg_low,
+                        row.avg_high
+                    );
+                })
+                .join("");
         }
 
 
@@ -399,19 +404,26 @@ async function loadWeather(geoid) {
             seasonalButton.classList.add("active");
             monthlyButton.classList.remove("active");
 
-            container.innerHTML =
-                weather.seasonal
-                    .map(row => {
+            container.innerHTML = `
+                <div class="weather-header">
+                    <span></span>
+                    <span>Average</span>
+                    <span>Low</span>
+                    <span>High</span>
+                </div>
+            ` +
+            weather.seasonal
+                .map(row => {
 
-                        return weatherRow(
-                            row.season,
-                            row.avg_temp,
-                            row.avg_low,
-                            row.avg_high
-                        );
+                    return weatherRow(
+                        row.season,
+                        row.avg_temp,
+                        row.avg_low,
+                        row.avg_high
+                    );
 
-                    })
-                    .join("");
+                })
+                .join("");
         }
 
 
