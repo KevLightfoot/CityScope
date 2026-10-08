@@ -196,7 +196,7 @@ export async function showCityOnMap(city) {
     }
 
 
-     // =========================
+    // =========================
     // FIT CITY TO AVAILABLE MAP
     // =========================
 
@@ -206,16 +206,6 @@ export async function showCityOnMap(city) {
 
     if (bounds) {
 
-        const panel =
-            document.getElementById("city-panel");
-
-
-        const panelWidth =
-            panel
-                ? panel.getBoundingClientRect().width
-                : 760;
-
-
         map.fitBounds(
             bounds,
             {
@@ -223,7 +213,7 @@ export async function showCityOnMap(city) {
                     top: 80,
                     bottom: 80,
                     left: 80,
-                    right: panelWidth + 80
+                    right: 500
                 },
 
                 maxZoom: 14,
