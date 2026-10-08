@@ -588,14 +588,30 @@ body {
 .compare-grid > * {
     padding: 9px;
     border-bottom: 1px solid #303840;
+    box-sizing: border-box;
 }
 
-.compare-grid > :nth-child(3n + 2),
-.compare-grid > :nth-child(3n + 3) {
+.compare-grid > div:nth-child(3n + 1) {
+    text-align: left;
+}
+
+.compare-grid > div:nth-child(3n + 2),
+.compare-grid > div:nth-child(3n + 3) {
     text-align: right;
 }
 
-.compare-grid > :nth-last-child(-n + 3) {
+.compare-category {
+    grid-column: 1 / -1;
+    padding: 10px 12px !important;
+    background: #1d2329;
+    color: #ffffff;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.4px;
+    text-align: left !important;
+}
+
+.compare-grid > :last-child {
     border-bottom: 0;
 }
 

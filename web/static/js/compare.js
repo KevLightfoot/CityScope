@@ -1,4 +1,4 @@
-import { searchCities, getCity } from "./api.js";
+import { searchCities, getCity, getWeather } from "./api.js";
 
 let currentCity = null;
 
@@ -52,8 +52,11 @@ async function openComparePanel() {
         </div>
 
         <div class="compare-current">
-            <strong>${currentCity.city}</strong>
-            <span>${currentCity.state}</span>
+            <strong>
+                ${currentCity.city}, ${currentCity.state}
+                <span class="compare-vs">vs</span>
+                ${comparisonCity.city}, ${comparisonCity.state}
+            </strong>
         </div>
 
         <input
@@ -178,9 +181,6 @@ async function compareWith(city) {
                     DEMOGRAPHICS
                 </div>
 
-                <div></div>
-                <div></div>
-
                 <div>Population</div>
                 <div>${formatNumber(currentCity.population)}</div>
                 <div>${formatNumber(comparisonCity.population)}</div>
@@ -197,9 +197,6 @@ async function compareWith(city) {
                 <div class="compare-category">
                     HOUSING
                 </div>
-
-                <div></div>
-                <div></div>
 
                 <div>Properties</div>
                 <div>${formatNumber(currentCity.property_count)}</div>
@@ -226,36 +223,18 @@ async function compareWith(city) {
                     WEATHER
                 </div>
 
-                <div></div>
-                <div></div>
-
                 <div>Average Temperature</div>
-                <div>—</div>
-                <div>—</div>
+                <div id="compare-current-temp">—</div>
+                <div id="compare-other-temp">—</div>
 
 
                 <div class="compare-category">
                     CRIME
                 </div>
 
-                <div></div>
-                <div></div>
-
-                <div>Reported Incidents</div>
-                <div>${formatNumber(currentCity.incident_count)}</div>
-                <div>${formatNumber(comparisonCity.incident_count)}</div>
-
-
-                <div class="compare-category">
-                    POINTS OF INTEREST
-                </div>
-
-                <div></div>
-                <div></div>
-
-                <div>Total POIs</div>
-                <div>${formatNumber(currentCity.poi_total_count)}</div>
-                <div>${formatNumber(comparisonCity.poi_total_count)}</div>
+                <div>Crime Rate / 1,000</div>
+                <div>${crimeRate(currentCity)}</div>
+                <div>${crimeRate(comparisonCity)}</div>
 
             </div>
         `;
@@ -322,11 +301,85 @@ function formatPercent(value) {
 }
 
 
-function formatValue(value) {
+function crimeRate(city) {
+    const incidents = Number(city.incident_count);
+    const population = Number(city.population);
 
-    if (value === null || value === undefined) {
+    if (
+        !Number.isFinite(incidents) ||
+        !Number.isFinite(population) ||
+        population <= 0
+    ) {
         return "—";
     }
 
-    return Number(value).toFixed(1);
+    return `${((incidents / population) * 1000).toFixed(1)}`;
+}
+
+function formatValue(value) {
+    const number = Number(value);
+
+    return Number.isFinite(number)
+        ? number.toLocaleString(undefined, {
+            maximumFractionDigits: 1
+        })
+        : "—";
+}
+
+async function loadComparisonWeather(currentCity, comparisonCity) {
+    const currentTemp =
+        document.getElementById("compare-current-temp");
+
+    const otherTemp =
+        document.getElementById("compare-other-temp");
+
+    if (!currentTemp || !otherTemp) {
+        return;
+    }
+
+    try {
+        const [currentWeather, otherWeather] =
+            await Promise.all([
+                getWeather(currentCity.place_GEOID),
+                getWeather(comparisonCity.place_GEOID)
+            ]);
+
+        currentTemp.textContent =
+            averageWeatherTemperature(currentWeather);
+
+        otherTemp.textContent =
+            averageWeatherTemperature(otherWeather);
+
+    } catch (error) {
+        console.error(error);
+
+        currentTemp.textContent = "—";
+        otherTemp.textContent = "—";
+    }
+}
+
+function averageWeatherTemperature(weather) {
+    if (
+        !weather ||
+        !weather.monthly ||
+        !weather.monthly.length
+    ) {
+        return "—";
+    }
+
+    const values = weather.monthly
+        .map(row => Number(row.avg_temp))
+        .filter(Number.isFinite);
+
+    if (!values.length) {
+        return "—";
+    }
+
+    const average =
+        values.reduce(
+            (sum, value) => sum + value,
+            0
+        ) / values.length;
+
+    return `${average.toFixed(1)}°`;
 }
