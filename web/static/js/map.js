@@ -102,10 +102,6 @@ export async function showCityOnMap(city) {
     }
 
 
-    // =========================
-    // MARKER
-    // =========================
-
     if (marker) {
         marker.remove();
     }
@@ -130,10 +126,6 @@ export async function showCityOnMap(city) {
             .addTo(map);
 
 
-    // =========================
-    // GET BOUNDARY
-    // =========================
-
     const boundary =
         await getBoundary(
             city.place_GEOID
@@ -143,10 +135,6 @@ export async function showCityOnMap(city) {
     const geojson =
         JSON.parse(boundary.geojson);
 
-
-    // =========================
-    // DRAW BOUNDARY
-    // =========================
 
     if (map.getSource("city-boundary")) {
 
@@ -196,15 +184,20 @@ export async function showCityOnMap(city) {
     }
 
 
-    // =========================
-    // FIT CITY TO AVAILABLE MAP
-    // =========================
-
     const bounds =
         getGeoJsonBounds(geojson);
 
 
     if (bounds) {
+
+        const panel =
+            document.getElementById("city-panel");
+
+        const panelWidth =
+            panel
+                ? panel.getBoundingClientRect().width
+                : 760;
+
 
         map.fitBounds(
             bounds,
@@ -213,10 +206,10 @@ export async function showCityOnMap(city) {
                     top: 80,
                     bottom: 80,
                     left: 80,
-                    right: 500
+                    right: panelWidth + 80
                 },
 
-                maxZoom: 14,
+                maxZoom: 16,
 
                 duration: 1200,
 
@@ -226,10 +219,6 @@ export async function showCityOnMap(city) {
 
     }
 
-
-    // =========================
-    // OPEN POPUP
-    // =========================
 
     map.once(
         "moveend",
@@ -244,10 +233,6 @@ export async function showCityOnMap(city) {
 
 }
 
-
-// =========================
-// GEOJSON BOUNDS
-// =========================
 
 function getGeoJsonBounds(geojson) {
 
@@ -327,10 +312,6 @@ function getGeoJsonBounds(geojson) {
     return bounds;
 }
 
-
-// =========================
-// HTML ESCAPE
-// =========================
 
 function escapeHtml(value) {
 
