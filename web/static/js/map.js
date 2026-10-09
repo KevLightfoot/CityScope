@@ -791,15 +791,19 @@ export function showPOIs(category) {
                 ],
                 "circle-color": [
                     "match",
-                    ["get", "cityscope_category"],
-                    "Food", "#F97316",
-                    "Restaurants", "#F97316",
-                    "Education", "#38BDF8",
-                    "Healthcare", "#F43F5E",
-                    "Recreation", "#22C55E",
-                    "Shopping", "#A78BFA",
-                    "Transportation", "#FACC15",
-                    "#38BDF8"
+                    ["downcase", ["to-string", ["get", "cityscope_category"]]],
+                    "food", "#F97316",
+                    "grocery", "#84CC16",
+                    "healthcare", "#F43F5E",
+                    "education", "#38BDF8",
+                    "shopping", "#A78BFA",
+                    "financial", "#14B8A6",
+                    "fitness", "#F59E0B",
+                    "recreation", "#22C55E",
+                    "entertainment", "#EC4899",
+                    "lodging", "#A78BFA",
+                    "religious", "#EAB308",
+                    "#64748B"
                 ],
                 "circle-opacity": [
                     "*",
