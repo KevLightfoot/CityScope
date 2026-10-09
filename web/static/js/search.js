@@ -85,10 +85,11 @@ async function performSearch(
                 hideResults(results);
 
                 const data = await getCity(city.city, city.state);
-                setMode("city");
 
                 showCity(data);
                 showCityOnMap(data);
+
+                setMode("city");
 
                 await setNeighborhoodAvailability(
                     data.city,
