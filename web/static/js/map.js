@@ -629,35 +629,36 @@ export function plotNeighborhoodHousing(properties, boundary) {
             }
         });
 
-        map.on("click", "neighborhood-housing-properties", event => {
-            const property = event.features?.[0]?.properties;
-            if (!property) return;
+map.on("click", "neighborhood-housing-properties", event => {
+    const feature = event.features?.[0];
+    const property = feature?.properties;
+    if (!property) return;
 
-            const address = [property.street, property.unit]
-                .filter(Boolean)
-                .join(" ");
+    const address = [property.street, property.unit]
+        .filter(Boolean)
+        .join(" ");
 
-            const price = property.list_price != null
-                ? `$${Number(property.list_price).toLocaleString()}`
-                : "—";
+    const price = property.list_price != null
+        ? `$${Number(property.list_price).toLocaleString()}`
+        : "—";
 
-            new maplibregl.Popup({ offset: 8 })
-                .setLngLat(event.lngLat)
-                .setHTML(`
-                    <strong>${escapeHtml(address || "Property")}</strong><br>
-                    ${escapeHtml(property.city || "")},
-                    ${escapeHtml(property.state || "")}
-                    ${escapeHtml(property.zip || "")}
-                    <br><br>
-                    <strong>${price}</strong><br>
-                    ${escapeHtml(property.beds ?? "—")} beds ·
-                    ${escapeHtml(property.baths ?? "—")} baths<br>
-                    ${property.sqft
-                        ? `${Number(property.sqft).toLocaleString()} sq ft`
-                        : "—"}
-                `)
-                .addTo(map);
-        });
+    new maplibregl.Popup({ offset: 8 })
+        .setLngLat(event.lngLat)
+        .setHTML(`
+            <strong>${escapeHtml(address || "Property")}</strong><br>
+            ${escapeHtml(property.city || "")},
+            ${escapeHtml(property.state || "")}
+            ${escapeHtml(property.zip || "")}
+            <br><br>
+            <strong>${escapeHtml(price)}</strong><br>
+            ${escapeHtml(property.beds ?? "—")} beds ·
+            ${escapeHtml(property.baths ?? "—")} baths<br>
+            ${property.sqft
+                ? `${Number(property.sqft).toLocaleString()} sq ft`
+                : "—"}
+        `)
+        .addTo(map);
+});
 
         map.on("mouseenter", "neighborhood-housing-properties", () => {
             map.getCanvas().style.cursor = "pointer";
