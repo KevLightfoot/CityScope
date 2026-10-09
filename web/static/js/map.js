@@ -766,7 +766,7 @@ export async function showNeighborhoodBoundaries() {
                     type: "line",
                     source: "neighborhood-boundaries",
                     paint: {
-                        "line-color": "#ffffff",
+                        "line-color": "#630b0b",
                         "line-width": 2,
                         "line-opacity": 0.9
                     }
