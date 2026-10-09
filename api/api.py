@@ -47,24 +47,10 @@ boundaries = (
 
 boundaries.count()
 
-neighborhood_boundary_rows = (
+neighborhood_boundaries = (
     spark.read
     .parquet("data/processed/neighborhood_boundaries")
-    .select(
-        "nbhd_id",
-        "neighborhood",
-        "city",
-        "state",
-        "state_abbr",
-        "geojson"
-    )
-    .collect()
 )
-
-neighborhood_boundaries = [
-    row.asDict()
-    for row in neighborhood_boundary_rows
-]
 
 
 # ---------------------------------------------------------
@@ -237,18 +223,28 @@ def get_boundary(geoid: str):
 
 @app.get("/api/neighborhood-boundaries/{city}/{state}")
 def get_neighborhood_boundaries(city: str, state: str):
-    city_key = city.strip().lower()
-    state_key = state.strip().lower()
-
-    results = [
-        neighborhood
-        for neighborhood in neighborhood_boundaries
-        if neighborhood["city"].strip().lower() == city_key
-        and neighborhood["state"].strip().lower() == state_key
-    ]
+    result = (
+        neighborhood_boundaries
+        .filter(
+            (lower(col("city")) == city.strip().lower()) &
+            (lower(col("state")) == state.strip().lower())
+        )
+        .select(
+            "nbhd_id",
+            "neighborhood",
+            "city",
+            "state",
+            "state_abbr",
+            "geojson"
+        )
+        .collect()
+    )
 
     return {
-        "results": results
+        "results": [
+            row.asDict()
+            for row in result
+        ]
     }
 
 # ---------------------------------------------------------
