@@ -1,6 +1,7 @@
 import {
     getNeighborhood,
-    getNeighborhoodSimilar
+    getNeighborhoodSimilar,
+    searchNeighborhoods
 } from "./api.js";
 
 import {
@@ -331,59 +332,51 @@ async function loadSimilarNeighborhoods(
     }
 }
 
-function createSimilarNeighborhood(
-    neighborhood
-) {
-    const row =
-        document.createElement(
-            "div"
-        );
 
-    row.className =
-        "similar-neighborhood";
+function createSimilarNeighborhood(neighborhood) {
+    const row = document.createElement("button");
+    row.type = "button";
+    row.className = "similar-neighborhood";
+    row.style.width = "100%";
+    row.style.textAlign = "left";
+    row.style.cursor = "pointer";
 
-    const name =
-        document.createElement(
-            "span"
-        );
+    const name = document.createElement("span");
+    name.textContent = neighborhood.nbhd_name || "Unnamed neighborhood";
 
-    name.textContent =
-        neighborhood.nbhd_name;
+    const location = document.createElement("small");
+    location.textContent = `${neighborhood.city}, ${neighborhood.state}`;
 
-    const location =
-        document.createElement(
-            "small"
-        );
+    const score = document.createElement("strong");
+    score.textContent = neighborhood.match_score ?? "";
 
-    location.textContent =
-        `${neighborhood.city}, ${neighborhood.state}`;
-
-    const score =
-        document.createElement(
-            "strong"
-        );
-
-    score.textContent =
-        `${neighborhood.match_score}`;
-
-    const left =
-        document.createElement(
-            "div"
-        );
-
+    const left = document.createElement("div");
     left.appendChild(name);
     left.appendChild(location);
 
     row.appendChild(left);
     row.appendChild(score);
 
+    row.addEventListener("click", () => {
+        const comparisonRequest = {
+            city: neighborhood.city,
+            state: neighborhood.state,
+            nbhd_id: neighborhood.nbhd_id
+        };
+
+        document.dispatchEvent(
+            new CustomEvent("neighborhood:compare", {
+                detail: comparisonRequest
+            })
+        );
+    });
+
     return row;
 }
 
+
 async function openNeighborhoodComparison(selectedNeighborhood = null) {
-    if (!currentNeighborhood) {
-        return;
-    }
+    if (!currentNeighborhood) return;
 
     document.getElementById("neighborhood-compare-panel")?.remove();
 
@@ -394,83 +387,130 @@ async function openNeighborhoodComparison(selectedNeighborhood = null) {
             <strong>Compare Neighborhoods</strong>
             <button id="neighborhood-compare-close" type="button">×</button>
         </div>
+
         <div id="neighborhood-compare-current" class="compare-current"></div>
-        <div id="neighborhood-compare-choices"></div>
+
+        <input
+            id="neighborhood-compare-search"
+            type="search"
+            placeholder="Search any neighborhood or city..."
+            autocomplete="off"
+            aria-label="Search neighborhoods to compare"
+        >
+
+        <div id="neighborhood-compare-choices">
+            Search for a neighborhood to compare.
+        </div>
+
         <div id="neighborhood-compare-table"></div>
     `;
 
     document.body.appendChild(panel);
 
-    panel.querySelector("#neighborhood-compare-close").addEventListener("click", () => {
-        panel.remove();
-    });
+    panel.querySelector("#neighborhood-compare-close")
+        .addEventListener("click", () => panel.remove());
 
     const currentLabel = panel.querySelector("#neighborhood-compare-current");
+    const searchInput = panel.querySelector("#neighborhood-compare-search");
     const choices = panel.querySelector("#neighborhood-compare-choices");
     const table = panel.querySelector("#neighborhood-compare-table");
 
     currentLabel.textContent =
-        `Current neighborhood: ${currentNeighborhood.neighborhood}, ${currentNeighborhood.city}, ${currentNeighborhood.state}`;
+        `Comparing with: ${currentNeighborhood.neighborhood}, ` +
+        `${currentNeighborhood.city}, ${currentNeighborhood.state}`;
 
-    try {
-        if (selectedNeighborhood) {
-            await renderNeighborhoodComparison(selectedNeighborhood, panel);
-            return;
-        }
+    let timer = null;
+    let requestId = 0;
 
-        choices.textContent = "Finding neighborhoods to compare...";
+    async function runSearch(query = "") {
+        const thisRequest = ++requestId;
+        choices.textContent = "Searching neighborhoods...";
 
-        const similar = await getNeighborhoodSimilar(
-            currentNeighborhood.city,
-            currentNeighborhood.neighborhood
-        );
+        try {
+            const candidates = await searchNeighborhoods(
+                query,
+                query ? "" : currentNeighborhood.city,
+                query ? "" : currentNeighborhood.state,
+                50
+            );
 
-        if (currentNeighborhood !== null) {
-            choices.innerHTML = "";
-        }
+            if (
+                thisRequest !== requestId ||
+                !document.body.contains(panel)
+            ) {
+                return;
+            }
 
-        const candidates = [
-            ...(similar.same_city || []),
-            ...(similar.other_cities || [])
-        ];
+            choices.replaceChildren();
 
-        if (!candidates.length) {
-            choices.textContent = "No similar neighborhoods are available to compare.";
-            return;
-        }
+            const filtered = candidates.filter(item =>
+                !(
+                    item.city === currentNeighborhood.city &&
+                    item.state === currentNeighborhood.state &&
+                    Number(item.nbhd_id) === Number(currentNeighborhood.nbhd_id)
+                )
+            );
 
-        const heading = document.createElement("p");
-        heading.className = "neighborhood-compare-help";
-        heading.textContent = "Choose a neighborhood to compare:";
-        choices.appendChild(heading);
+            if (!filtered.length) {
+                choices.textContent = query
+                    ? "No matching neighborhoods found."
+                    : "No other neighborhoods found in this city.";
+                return;
+            }
 
-        candidates.forEach(candidate => {
-            const button = document.createElement("button");
-            button.type = "button";
-            button.className = "compare-city-result";
-            button.textContent =
-                `${candidate.nbhd_name}, ${candidate.city}, ${candidate.state}`;
+            filtered.forEach(candidate => {
+                const button = document.createElement("button");
+                button.type = "button";
+                button.className = "compare-city-result";
 
-            button.addEventListener("click", async () => {
-                choices.textContent = "";
-                table.textContent = "Loading comparison...";
+                const name = document.createElement("strong");
+                name.textContent = candidate.nbhd_name || "Unnamed neighborhood";
 
-                try {
-                    await renderNeighborhoodComparison(candidate, panel);
-                } catch (error) {
-                    console.error("Neighborhood comparison failed:", error);
-                    table.textContent = "Unable to load this comparison. Please try another neighborhood.";
-                }
+                const location = document.createElement("small");
+                location.textContent = `${candidate.city}, ${candidate.state}`;
+
+                button.replaceChildren(name, location);
+
+                button.addEventListener("click", async () => {
+                    choices.textContent = "";
+                    table.textContent = "Loading comparison...";
+
+                    try {
+                        await renderNeighborhoodComparison(candidate, panel);
+                    } catch (error) {
+                        console.error("Neighborhood comparison failed:", error);
+                        table.textContent =
+                            "Unable to load this comparison. Please try another neighborhood.";
+                    }
+                });
+
+                choices.appendChild(button);
             });
+        } catch (error) {
+            if (thisRequest !== requestId) return;
 
-            choices.appendChild(button);
-        });
-    } catch (error) {
-        console.error("Failed to prepare neighborhood comparison:", error);
-        choices.textContent = "Unable to load similar neighborhoods. Please try again.";
+            console.error("Neighborhood search failed:", error);
+            choices.textContent =
+                "Neighborhood search failed. Please try again.";
+        }
+    }
+
+    searchInput.addEventListener("input", () => {
+        window.clearTimeout(timer);
+
+        const query = searchInput.value.trim();
+
+        timer = window.setTimeout(() => {
+            runSearch(query);
+        }, 250);
+    });
+
+    if (selectedNeighborhood) {
+        await renderNeighborhoodComparison(selectedNeighborhood, panel);
+    } else {
+        await runSearch();
     }
 }
-
 async function renderNeighborhoodComparison(other, panel) {
     if (!currentNeighborhood) {
         return;
@@ -649,6 +689,9 @@ export function setupNeighborhood() {
             openNeighborhoodComparison();
         });
     }
+    document.addEventListener("neighborhood:compare", event => {
+        openNeighborhoodComparison(event.detail);
+    });
 }
 
 export function getCurrentNeighborhood() {

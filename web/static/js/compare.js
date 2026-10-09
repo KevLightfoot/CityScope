@@ -321,10 +321,11 @@ async function compareWith(city) {
         `;
 
         /*
-         * Hide the search after selecting a city
+         * Keep search available to change the comparison city.
          */
-        searchInput.style.display = "none";
-        results.style.display = "none";
+        searchInput.style.display = "";
+        results.style.display = "block";
+        results.replaceChildren();
 
         /*
          * Build comparison table
@@ -462,11 +463,17 @@ async function compareWith(city) {
         );
 
     } catch (error) {
-
         console.error("City comparison failed:", error);
 
+        const message = String(error?.message || "").toLowerCase();
+
+        if (message.includes("city not found")) {
+            table.replaceChildren();
+            return;
+        }
+
         table.textContent =
-            `Unable to load comparison: ${error.message}`;
+            "Unable to load comparison. Please try again.";
     }
 
 }

@@ -921,6 +921,56 @@ body {
     margin: 10px 0;
 }
 
+#neighborhood-compare-search {
+    display: block;
+    width: 100%;
+    margin: 10px 0;
+    padding: 12px 13px;
+    color: #f2f4f7;
+    background: #20252b;
+    border: 1px solid #45515e;
+    border-radius: 7px;
+    font: inherit;
+    outline: none;
+}
+
+#neighborhood-compare-search:focus {
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.18);
+}
+
+#neighborhood-compare-choices {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin: 10px 0 14px;
+}
+
+#neighborhood-compare-choices .compare-city-result {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    width: 100%;
+    padding: 11px 12px;
+    color: #f2f4f7;
+    background: #20252b;
+    border: 1px solid #39414a;
+    border-radius: 7px;
+    text-align: left;
+    cursor: pointer;
+}
+
+#neighborhood-compare-choices .compare-city-result:hover {
+    background: #2b323a;
+    border-color: #60a5fa;
+}
+
+#neighborhood-compare-choices .compare-city-result small {
+    color: #aeb6bf;
+    font-size: 12px;
+}
+
 #neighborhood-compare-panel .neighborhood-compare-grid {
     margin-top: 12px;
     font-size: 12px;

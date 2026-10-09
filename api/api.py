@@ -374,6 +374,58 @@ neighborhood_cityscope = (
 
 neighborhood_cityscope.count()
 
+@app.get("/api/neighborhood-search")
+def search_neighborhoods(
+    q: str = "",
+    city: str = "",
+    state: str = "",
+    limit: int = 50
+):
+    query = q.strip().lower()
+    city_key = city.strip().lower()
+    state_key = state.strip().lower()
+    limit = max(1, min(limit, 100))
+
+    results = neighborhood_cityscope.filter(
+        col("nbhd_name").isNotNull()
+        & (col("nbhd_name") != "")
+    )
+
+    if city_key:
+        results = results.filter(
+            lower(col("city")) == city_key
+        )
+
+    if state_key:
+        results = results.filter(
+            lower(col("state")) == state_key
+        )
+
+    if query:
+        results = results.filter(
+            lower(col("nbhd_name")).contains(query)
+            | lower(col("city")).contains(query)
+            | lower(col("state")).contains(query)
+        )
+
+    rows = (
+        results
+        .select("city", "state", "nbhd_id", "nbhd_name")
+        .dropDuplicates(["city", "state", "nbhd_id"])
+        .orderBy("city", "state", "nbhd_name")
+        .limit(limit)
+        .collect()
+    )
+
+    return [
+        {
+            "city": row["city"],
+            "state": row["state"],
+            "nbhd_id": row["nbhd_id"],
+            "nbhd_name": row["nbhd_name"]
+        }
+        for row in rows
+    ]
 
 @app.get("/api/neighborhood/{city}/{state}/{nbhd_id}")
 def get_neighborhood(

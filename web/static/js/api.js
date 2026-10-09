@@ -159,6 +159,31 @@ export async function getNeighborhoodSimilar(city, neighborhood) {
     return response.json();
 }
 
+export async function searchNeighborhoods(
+    query = "",
+    city = "",
+    state = "",
+    limit = 50
+) {
+    const params = new URLSearchParams({
+        q: query,
+        limit: String(limit)
+    });
+
+    if (city) params.set("city", city);
+    if (state) params.set("state", state);
+
+    const response = await fetch(
+        `${API_BASE}/api/neighborhood-search?${params.toString()}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Neighborhood search failed");
+    }
+
+    return response.json();
+}
+
 export async function getNeighborhood(
     city,
     state,
