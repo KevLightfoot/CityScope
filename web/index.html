@@ -22,17 +22,17 @@
 
 </head>
 
-<div id="view-toggle">
-    <button id="city-mode-button" class="active">
-        City
-    </button>
-
-    <button id="neighborhood-mode-button">
-        Neighborhood
-    </button>
-</div>
-
 <body>
+
+    <div id="view-toggle">
+        <button id="city-mode-button" class="active">
+            City
+        </button>
+
+        <button id="neighborhood-mode-button">
+            Neighborhood
+        </button>
+    </div>
 
     <div id="map"></div>
 
@@ -317,7 +317,7 @@
             
             <!-- SIMILAR CITIES -->
 
-            <div class="panel-section" id="similar-cities-section">
+            <div class="panel-section full-width-section action-section" id="similar-cities-section">
 
                 <button class="section-header">
                     <span>Similar Cities</span>
@@ -336,7 +336,7 @@
 
             <!-- POINTS OF INTEREST -->
 
-            <div class="panel-section">
+            <div class="panel-section full-width-section">
 
                 <button class="section-header">
                     <span>Points of Interest</span>
@@ -395,18 +395,22 @@
 
                 </div>
 
-                <!-- City POI buttons -->
+
+
+
+
+            </div> <!-- POI section -->
+
+            <!-- COMPARE CITIES -->
+            <div class="panel-section full-width-section action-section compare-action-section">
 
                 <button
                     id="compare-city-button"
                     class="compare-button"
+                    type="button"
                 >
                     Compare Cities
                 </button>
-
-    </div> <!-- POI section -->
-
-            </div>
 
         </div>
 

@@ -425,11 +425,12 @@ async function compareWith(city) {
 
     } catch (error) {
 
-        console.error(error);
+        console.error("City comparison failed:", error);
 
         table.textContent =
-            "Unable to load comparison.";
+            `Unable to load comparison: ${error.message}`;
     }
+
 }
 
 

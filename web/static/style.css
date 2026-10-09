@@ -207,20 +207,55 @@ body {
     gap: 9px;
 }
 
+
+
 .panel-section {
     min-width: 0;
-
     background: #242a31;
-
     border: 1px solid #39414a;
-
     border-radius: 8px;
-
     overflow: hidden;
 }
 
-.panel-section:last-child {
+.panel-sections > .full-width-section {
     grid-column: 1 / -1;
+}
+
+/* Similar Cities and Compare Cities */
+#city-panel .action-section {
+    background: #202a34;
+    border-color: #455463;
+}
+
+#city-panel .action-section .section-header {
+    background: #202a34;
+}
+
+#city-panel .action-section .section-header:hover {
+    background: #2b3743;
+}
+
+/* Compare Cities fills its own separate box */
+#city-panel .compare-action-section {
+    padding: 0;
+}
+
+#city-panel .compare-action-section .compare-button {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 12px;
+    background: #202a34;
+    border: 0;
+    border-radius: 7px;
+    color: #dce1e6;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+#city-panel .compare-action-section .compare-button:hover {
+    background: #2b3743;
 }
 
 
