@@ -123,6 +123,25 @@ export async function getNeighborhoodAvailability(city, state) {
     return response.json();
 }
 
+
+export async function getCitySimilar(city, state) {
+    const params = new URLSearchParams({
+        city,
+        state
+    });
+
+    const response = await fetch(
+        `${API_BASE}/api/city-similar?${params.toString()}`
+    );
+
+    if (!response.ok) {
+        throw new Error("City similarity data not found");
+    }
+
+    return response.json();
+}
+
+
 export async function getNeighborhoodSimilar(city, neighborhood) {
     const params = new URLSearchParams({
         city,

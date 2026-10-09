@@ -144,6 +144,86 @@ STATE_FIPS = {
     "56": "WY"
 }
 
+
+# ---------------------------------------------------------
+# CITY SIMILARITY
+# ---------------------------------------------------------
+
+city_vectors = (
+    spark.read
+    .parquet("data/processed/city_similarity_vectors")
+    .cache()
+)
+
+city_vectors.count()
+
+city_lsh_model = BucketedRandomProjectionLSHModel.load(
+    "data/processed/city_similarity_model"
+)
+
+
+# ---------------------------------------------------------
+# CITY SIMILARITY API
+# ---------------------------------------------------------
+
+@app.get("/api/city-similar")
+def get_city_similar(
+    city: str,
+    state: str
+):
+    city_key = city.strip().lower()
+    state_key = state.strip().lower()
+
+    query = (
+        city_vectors
+        .filter(
+            (lower(col("city")) == city_key) &
+            (lower(col("state")) == state_key)
+        )
+        .limit(1)
+    )
+
+    query_rows = query.collect()
+
+    if not query_rows:
+        raise HTTPException(
+            status_code=404,
+            detail="City not found in similarity vectors"
+        )
+
+    query_row = query_rows[0]
+
+    similar_cities = (
+        city_lsh_model
+        .approxNearestNeighbors(
+            city_vectors,
+            query_row["features"],
+            100
+        )
+        .filter(
+            ~(
+                (lower(col("city")) == city_key) &
+                (lower(col("state")) == state_key)
+            )
+        )
+        .orderBy("distCol")
+        .limit(5)
+        .withColumn(
+            "match_score",
+            round(10 * exp(-col("distCol") / 5), 1)
+        )
+    )
+
+    return [
+        {
+            "city": row["city"],
+            "state": row["state"],
+            "match_score": row["match_score"]
+        }
+        for row in similar_cities.collect()
+    ]
+
+
 # ---------------------------------------------------------
 # NEIGHBORHOOD SIMILARITY
 # ---------------------------------------------------------
