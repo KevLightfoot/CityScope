@@ -52,6 +52,9 @@ document.addEventListener("click", event => {
     }
 });
 
+window.addEventListener("cityscope:neighborhood-changing", () => {
+    closePOIPanel();
+});
 
 
 export async function openPOIPanel(selectedCategory) {

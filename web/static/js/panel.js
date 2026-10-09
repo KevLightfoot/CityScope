@@ -14,7 +14,9 @@ import {
     showHousingProperties,
     hideHousingProperties,
     clearHousingProperties,
-    isHousingVisible
+    isHousingVisible,
+    hidePOIs,
+    closePOIPopup
 } from "./map.js";
 
 import { openPOIPanel,
@@ -31,11 +33,13 @@ export function setupPanel() {
     document
         .getElementById("close-panel")
         .addEventListener("click", () => {
+            closePOIPanel();
+            hidePOIs();
+            closePOIPopup();
 
             document
                 .getElementById("city-panel")
                 .classList.add("hidden");
-
         });
 
 
@@ -92,22 +96,6 @@ export function setupPanel() {
             }
         });
     }
-
-    document
-        .querySelectorAll(".poi-button")
-        .forEach(button => {
-            button.addEventListener("click", () => {
-                const category = button.dataset.category;
-
-                if (!category || !currentCity) {
-                    return;
-                }
-
-                openPOIPanel(category);
-            });
-        });
-
-
 }
 
 export function showCity(city) {

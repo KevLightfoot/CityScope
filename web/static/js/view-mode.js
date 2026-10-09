@@ -1,7 +1,11 @@
 import {
     showNeighborhoodBoundaries,
-    hideNeighborhoodBoundaries
+    hideNeighborhoodBoundaries,
+    hidePOIs,
+    closePOIPopup
 } from "./map.js";
+
+import { closePOIPanel } from "./poi-panel.js";
 
 import {
     getNeighborhoodAvailability
@@ -39,6 +43,10 @@ export function setupViewMode() {
 
 
 export function setMode(mode) {
+
+    closePOIPanel();
+    hidePOIs();
+     closePOIPopup();
 
     if (mode === "neighborhood" && !neighborhoodAvailable) {
         mode = "city";

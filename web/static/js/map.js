@@ -1,6 +1,7 @@
 import * as maplibregl from "https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.mjs";
 import { getBoundary, getNeighborhoodBoundaries } from "./api.js";
 
+
 let map;
 let marker = null;
 let housingProperties = [];
@@ -795,6 +796,10 @@ export async function showNeighborhoodBoundaries() {
 
                         const state =
                             feature.properties?.state;
+
+                        closePOIPopup();
+                        hidePOIs();
+                        window.dispatchEvent(new Event("cityscope:neighborhood-changing"));
 
                         window.cityscopeCurrentNeighborhood = {
                             city,
