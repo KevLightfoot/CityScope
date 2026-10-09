@@ -239,7 +239,7 @@ export async function showCityOnMap(city) {
                 }
             ],
             {
-                duration: 500,
+                duration: 900,
                 easing: "ease-out"
             }
         );
@@ -1356,6 +1356,20 @@ export async function showNeighborhoodBoundaries() {
                                     ? neighborhoodPanel.getBoundingClientRect().width
                                     : 0;
 
+                            const zoomIntoNeighborhood = () => {
+                                map.fitBounds(bounds, {
+                                    padding: {
+                                        top: 60,
+                                        bottom: 60,
+                                        left: 60,
+                                        right: panelWidth + 60
+                                    },
+                                    maxZoom: 15,
+                                    duration: 1400,
+                                    essential: true
+                                });
+                            };
+
                             if (currentCityBounds) {
                                 map.fitBounds(currentCityBounds, {
                                     padding: {
@@ -1364,21 +1378,14 @@ export async function showNeighborhoodBoundaries() {
                                         left: 80,
                                         right: panelWidth + 80
                                     },
-                                    duration: 0
+                                    duration: 1800,
+                                    essential: true
                                 });
-                            }
 
-                            map.fitBounds(bounds, {
-                                padding: {
-                                    top: 60,
-                                    bottom: 60,
-                                    left: 60,
-                                    right: panelWidth + 60
-                                },
-                                maxZoom: 15,
-                                duration: 1000,
-                                essential: true
-                            });
+                                map.once("moveend", zoomIntoNeighborhood);
+                            } else {
+                                zoomIntoNeighborhood();
+                            }
                         }
 
 
