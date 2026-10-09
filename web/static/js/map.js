@@ -768,7 +768,7 @@ export async function showNeighborhoodBoundaries() {
                     paint: {
                         "line-color": "#630b0b",
                         "line-width": 2,
-                        "line-opacity": 0.9
+                        "line-opacity": 0.85
                     }
                 });
 
