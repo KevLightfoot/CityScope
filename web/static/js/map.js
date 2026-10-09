@@ -778,6 +778,15 @@ export async function showNeighborhoodBoundaries() {
                     "neighborhood-boundaries-fill",
                     event => {
 
+                        // If a POI was clicked at this location, let its handler own the click.
+                        const poiAtClick = map.queryRenderedFeatures(event.point, {
+                            layers: ["poi-properties"]
+                        });
+
+                        if (poiAtClick.length > 0) {
+                            return;
+                        }
+
                         const feature =
                             event.features?.[0];
 
