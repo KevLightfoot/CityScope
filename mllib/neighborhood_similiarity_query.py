@@ -6,7 +6,7 @@ closest neighborhoods from other cities using the saved MLlib model.
 import sys
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, round
+from pyspark.sql.functions import col, round, exp
 
 
 spark = (
@@ -140,12 +140,12 @@ other_cities = (
 # Smaller distance = higher score.
 same_city = same_city.withColumn(
     "match_score",
-    round(10 * (-col("distCol") / 5).exp(), 1)
+    round(10 * exp(-col("distCol") / 5), 1)
 )
 
 other_cities = other_cities.withColumn(
     "match_score",
-    round(10 * (-col("distCol") / 5).exp(), 1)
+    round(10 * exp(-col("distCol") / 5), 1)
 )
 
 
