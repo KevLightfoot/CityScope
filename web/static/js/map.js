@@ -756,7 +756,7 @@ export async function showNeighborhoodBoundaries() {
                     type: "fill",
                     source: "neighborhood-boundaries",
                     paint: {
-                        "fill-color": "#3388ff",
+                        "fill-color": "#ffffff",
                         "fill-opacity": 0.06
                     }
                 });
@@ -766,9 +766,9 @@ export async function showNeighborhoodBoundaries() {
                     type: "line",
                     source: "neighborhood-boundaries",
                     paint: {
-                        "line-color": "#3388ff",
+                        "line-color": "#ffffff",
                         "line-width": 2,
-                        "line-opacity": 0.75
+                        "line-opacity": 0.9
                     }
                 });
 
@@ -790,7 +790,7 @@ export async function showNeighborhoodBoundaries() {
                         new maplibregl.Popup()
                             .setLngLat(event.lngLat)
                             .setHTML(
-                                `<strong>${name || "Neighborhood"}</strong>`
+                                `<strong>${escapeHtml(name || "Neighborhood")}</strong>`
                             )
                             .addTo(map);
                     }
