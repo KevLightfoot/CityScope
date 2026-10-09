@@ -185,6 +185,7 @@ export function setupPanel() {
         );
 
         document.addEventListener("cityscope:neighborhood-housing-reset", () => {
+            console.trace("[DEBUG] Neighborhood housing reset fired");
             clearNeighborhoodHousing();
 
             const button = document.getElementById(
