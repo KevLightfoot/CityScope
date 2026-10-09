@@ -526,7 +526,9 @@ body {
     text-align: left;
 }
 
-.housing-map-button {
+.housing-map-button,
+#show-neighborhood-housing-button
+{
     width: 100%;
     margin-top: 8px;
     padding: 9px 10px;
@@ -539,11 +541,14 @@ body {
     cursor: pointer;
 }
 
-.housing-map-button:hover:not(:disabled) {
+.housing-map-button:hover:not(:disabled), 
+#show-neighborhood-housing-button:hover:not(:disabled) 
+{
     background: #2b323a;
 }
 
-.housing-map-button:disabled {
+.housing-map-button:disabled,
+ #show-neighborhood-housing:disabled{
     opacity: 0.55;
     cursor: default;
 }
