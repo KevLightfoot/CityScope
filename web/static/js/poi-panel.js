@@ -157,12 +157,6 @@ function renderPanel() {
 
         <div class="poi-actions">
 
-            <button
-                id="poi-selected"
-                disabled
-            >
-                Show Selected on Map
-            </button>
 
             <button id="poi-all">
                 Show All ${title(category)} on Map
@@ -186,6 +180,10 @@ function renderPanel() {
     document
         .getElementById("poi-close")
         .onclick = closePOIPanel;
+
+    document
+        .getElementById("poi-all")
+        .onclick = showAll;
 
     document
         .getElementById("poi-search")
@@ -219,14 +217,6 @@ function renderPanel() {
             };
 
         });
-
-    document
-        .getElementById("poi-selected")
-        .onclick = showSelected;
-
-    document
-        .getElementById("poi-all")
-        .onclick = showAll;
 
     document
         .getElementById("poi-reset")
@@ -391,12 +381,13 @@ function renderResults(data) {
                 }
             }
 
-            all.forEach(poi => {
-                selected.set(poi.id, poi);
-            });
+                all.forEach(poi => {
+                    selected.set(poi.id, poi);
+                });
 
-            renderResults(data);
-            updateSelectedButton();
+                setPOIs([...selected.values()]);
+                showPOIs(category);
+                renderResults(data);
         };
 
         results.appendChild(button);
@@ -433,7 +424,8 @@ function renderResults(data) {
                 selected.delete(poi.id);
             }
 
-            updateSelectedButton();
+            setPOIs([...selected.values()]);
+            showPOIs(category);
         };
 
         const name =
@@ -497,42 +489,6 @@ function renderResults(data) {
 
 
     results.appendChild(pagination);
-
-    updateSelectedButton();
-}
-
-
-function updateSelectedButton() {
-
-    const button =
-        document.getElementById("poi-selected");
-
-    if (!button) {
-        return;
-    }
-
-    button.disabled =
-        selected.size === 0;
-
-    button.textContent =
-        selected.size
-            ? `Show ${selected.size} Selected on Map`
-            : "Show Selected on Map";
-}
-
-
-function showSelected() {
-
-    const pois =
-        [...selected.values()];
-
-    if (!pois.length) {
-        return;
-    }
-
-    setPOIs(pois);
-
-    showPOIs(category);
 }
 
 

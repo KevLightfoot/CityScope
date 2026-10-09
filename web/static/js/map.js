@@ -794,6 +794,22 @@ export async function showNeighborhoodBoundaries() {
                             return;
                         }
 
+                        const bounds = getGeoJsonBounds(feature.geometry);
+
+                        if (bounds) {
+                            map.fitBounds(bounds, {
+                                padding: {
+                                    top: 80,
+                                    bottom: 80,
+                                    left: 80,
+                                    right: 500
+                                },
+                                maxZoom: 15,
+                                duration: 1000,
+                                essential: true
+                            });
+                        }
+
                         const name =
                             feature.properties?.neighborhood;
 
