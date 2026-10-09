@@ -1,15 +1,15 @@
 """
 neighborhood_similarity_query.py uses saved Spark MLlib vectors and a
-similarity model to find neighborhoods similar to a selected neighborhood.
+similarity model to find the three closest neighborhoods in the same city
+and the three closest neighborhoods from other cities.
 """
 
 import sys
 
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col
+from pyspark.sql.functions import col, round
 
 
-# Create Spark Session
 spark = (
     SparkSession.builder
     .appName("CityScope Neighborhood Similarity Query")
@@ -20,13 +20,11 @@ spark = (
 spark.sparkContext.setLogLevel("WARN")
 
 
-# Read saved neighborhood vectors.
 neighborhood_vectors = spark.read.parquet(
     "data/processed/neighborhood_similarity_vectors"
 )
 
 
-# Load the saved MLlib similarity model.
 from pyspark.ml.feature import BucketedRandomProjectionLSHModel
 
 lsh_model = BucketedRandomProjectionLSHModel.load(
@@ -34,7 +32,6 @@ lsh_model = BucketedRandomProjectionLSHModel.load(
 )
 
 
-# Query neighborhood from command-line arguments.
 if len(sys.argv) < 3:
     print(
         "Usage: python neighborhood_similarity_query.py "
@@ -49,7 +46,6 @@ query_city = sys.argv[1]
 query_neighborhood = " ".join(sys.argv[2:])
 
 
-# Find the requested neighborhood.
 query = neighborhood_vectors.filter(
     (col("city") == query_city) &
     (col("nbhd_name") == query_neighborhood)
@@ -69,9 +65,9 @@ query_row = query.collect()[0]
 
 query_vector = query_row["features"]
 query_id = query_row["nbhd_id"]
+query_state = query_row["state"]
 
 
-# Find candidate neighborhoods from the nationwide vector set.
 similar_neighborhoods = (
     lsh_model.approxNearestNeighbors(
         neighborhood_vectors,
@@ -81,48 +77,56 @@ similar_neighborhoods = (
 )
 
 
-# Remove the queried neighborhood and invalid names.
 similar_neighborhoods = similar_neighborhoods.filter(
     ~(
         (col("city") == query_city) &
-        (col("state") == query_row["state"]) &
+        (col("state") == query_state) &
         (col("nbhd_id") == query_id)
     ) &
     col("nbhd_name").isNotNull() &
     (col("nbhd_name") != "") &
     ~col("nbhd_name").rlike("(?i)https?://") &
-    ~col("nbhd_name").rlike("^[0-9]+$") &
-    (col("distCol") <= 1.6)
+    ~col("nbhd_name").rlike("^[0-9]+$")
 )
 
 
-# Keep up to three similar neighborhoods from the same city.
 same_city = (
     similar_neighborhoods
     .filter(
         (col("city") == query_city) &
-        (col("state") == query_row["state"])
+        (col("state") == query_state)
     )
     .orderBy("distCol")
     .limit(3)
 )
 
 
-# Keep up to five similar neighborhoods from other cities.
 other_cities = (
     similar_neighborhoods
     .filter(
         ~(
             (col("city") == query_city) &
-            (col("state") == query_row["state"])
+            (col("state") == query_state)
         )
     )
     .orderBy("distCol")
-    .limit(5)
+    .limit(3)
 )
 
 
-# Display similar neighborhoods from the same city.
+# Convert distance into a readable match score out of 10.
+# distCol = 0 gives 10/10. Larger distances produce lower scores.
+same_city = same_city.withColumn(
+    "match_score",
+    round(10 / (1 + col("distCol")), 1)
+)
+
+other_cities = other_cities.withColumn(
+    "match_score",
+    round(10 / (1 + col("distCol")), 1)
+)
+
+
 print(
     f"\nSIMILAR {query_city.upper()} NEIGHBORHOODS:",
     flush=True
@@ -133,14 +137,13 @@ same_city.select(
     "state",
     "nbhd_name",
     "nbhd_id",
-    "distCol"
+    "match_score"
 ).show(
     3,
     False
 )
 
 
-# Display similar neighborhoods from other cities.
 print(
     "SIMILAR NEIGHBORHOODS FROM OTHER CITIES:",
     flush=True
@@ -151,9 +154,9 @@ other_cities.select(
     "state",
     "nbhd_name",
     "nbhd_id",
-    "distCol"
+    "match_score"
 ).show(
-    5,
+    3,
     False
 )
 
