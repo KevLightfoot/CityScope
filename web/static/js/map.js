@@ -756,7 +756,7 @@ export async function showNeighborhoodBoundaries() {
                     type: "fill",
                     source: "neighborhood-boundaries",
                     paint: {
-                        "fill-color": "#ce6126",
+                        "fill-color": "#630b0b",
                         "fill-opacity": 0.06
                     }
                 });
