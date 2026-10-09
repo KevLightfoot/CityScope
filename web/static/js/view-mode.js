@@ -3,7 +3,12 @@ import {
     hideNeighborhoodBoundaries
 } from "./map.js";
 
+import {
+    getNeighborhoodAvailability
+} from "./api.js";
+
 let currentMode = "city";
+let neighborhoodAvailable = false;
 
 export function setupViewMode() {
 
@@ -16,6 +21,8 @@ export function setupViewMode() {
     if (!cityButton || !neighborhoodButton) {
         return;
     }
+
+    neighborhoodButton.style.display = "none";
 
     cityButton.onclick = () => {
         setMode("city");
@@ -50,6 +57,11 @@ function setMode(mode) {
     );
 
     if (mode === "neighborhood") {
+       if (!neighborhoodAvailable) {
+            setMode("city");
+            return;
+        }
+
         showNeighborhoodBoundaries();
     } else {
         hideNeighborhoodBoundaries();
@@ -114,4 +126,48 @@ function updatePanelForMode() {
 
 export function getViewMode() {
     return currentMode;
+}
+
+export async function setNeighborhoodAvailability(city, state) {
+
+    try {
+
+        const result =
+            await getNeighborhoodAvailability(
+                city,
+                state
+            );
+
+        neighborhoodAvailable =
+            result.available;
+
+    } catch (error) {
+
+        console.error(
+            "Neighborhood availability check failed:",
+            error
+        );
+
+        neighborhoodAvailable = false;
+    }
+
+    const neighborhoodButton =
+        document.getElementById(
+            "neighborhood-mode-button"
+        );
+
+    if (neighborhoodButton) {
+
+        neighborhoodButton.style.display =
+            neighborhoodAvailable
+                ? ""
+                : "none";
+    }
+
+    if (
+        !neighborhoodAvailable &&
+        currentMode === "neighborhood"
+    ) {
+        setMode("city");
+    }
 }

@@ -1,6 +1,7 @@
 import { searchCities, getCity } from "./api.js";
 import { showCityOnMap } from "./map.js";
 import { showCity } from "./panel.js";
+import { setNeighborhoodAvailability } from "./view-mode.js";
 import { escapeHtml } from "./utils.js";
 
 export function setupSearch() {
@@ -87,6 +88,12 @@ async function performSearch(
 
                 showCity(data);
                 showCityOnMap(data);
+
+                await setNeighborhoodAvailability(
+                    data.city,
+                    data.state
+                );
+                
             });
 
             results.appendChild(result);

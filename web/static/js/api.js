@@ -110,3 +110,15 @@ export async function getNeighborhoodBoundaries(city, state) {
 
     return response.json();
 }
+
+export async function getNeighborhoodAvailability(city, state) {
+    const response = await fetch(
+        `${API_BASE}/api/neighborhood-available/${encodeURIComponent(city)}/${encodeURIComponent(state)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Neighborhood availability check failed");
+    }
+
+    return response.json();
+}

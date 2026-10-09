@@ -223,15 +223,39 @@ def get_boundary(geoid: str):
 # NBHD BOUNDARY
 # ---------------------------------------------------------
 
+def normalize_city_name(value):
+    return "".join(
+        character
+        for character in value.lower()
+        if character.isalnum()
+    )
+
+
+@app.get("/api/neighborhood-available/{city}/{state}")
+def neighborhood_available(city: str, state: str):
+
+    city_key = normalize_city_name(city)
+    state_key = state.strip().lower()
+
+    return {
+        "available": any(
+            normalize_city_name(neighborhood["city"]) == city_key
+            and neighborhood["state"].strip().lower() == state_key
+            for neighborhood in neighborhood_boundaries
+        )
+    }
+
+
 @app.get("/api/neighborhood-boundaries/{city}/{state}")
 def get_neighborhood_boundaries(city: str, state: str):
-    city_key = city.strip().lower()
+
+    city_key = normalize_city_name(city)
     state_key = state.strip().lower()
 
     results = [
         neighborhood
         for neighborhood in neighborhood_boundaries
-        if neighborhood["city"].strip().lower() == city_key
+        if normalize_city_name(neighborhood["city"]) == city_key
         and neighborhood["state"].strip().lower() == state_key
     ]
 
