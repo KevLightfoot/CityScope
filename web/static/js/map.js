@@ -677,25 +677,51 @@ export function clearHousingProperties() {
 }
 
 export function setPOIs(pois) {
-    poiFeatures = pois || [];
-    poiVisible = false;
+    const incoming = pois || [];
 
-    if (poiFeatures.length === 0) {
+    // An empty list is the explicit Reset POIs action.
+    if (incoming.length === 0) {
+        poiFeatures = [];
         plottedPoiIds.clear();
+        poiVisible = false;
+        activePoiCategory = null;
+
+        if (poiPopup) {
+            poiPopup.remove();
+            poiPopup = null;
+        }
+
+        if (map?.getLayer("poi-properties")) {
+            map.setLayoutProperty(
+                "poi-properties",
+                "visibility",
+                "none"
+            );
+        }
+
+        return;
     }
 
-    if (map.getLayer("poi-properties")) {
-        map.setLayoutProperty(
-            "poi-properties",
-            "visibility",
-            "none"
+    // Merge new results without removing previously plotted categories.
+    const combined = new Map(
+        poiFeatures.map(poi => [
+            String(poi.id ?? `${poi.longitude}:${poi.latitude}:${poi.name || ""}`),
+            poi
+        ])
+    );
+
+    incoming.forEach(poi => {
+        const id = String(
+            poi.id ?? `${poi.longitude}:${poi.latitude}:${poi.name || ""}`
         );
-    }
+        combined.set(id, poi);
+    });
+
+    poiFeatures = [...combined.values()];
 }
 
 export function showPOIs(category) {
     const features = poiFeatures
-        .filter(poi => !category || poi.cityscope_category === category)
         .map(poi => {
             const lat = Number(poi.latitude);
             const lng = Number(poi.longitude);
@@ -726,14 +752,14 @@ export function showPOIs(category) {
 
 
     const currentPoiIds = new Set(
-        features.map(feature => feature.id)
+        features.map(feature => String(feature.id))
     );
 
     const newPoiFeatures = features.filter(
-        feature => !plottedPoiIds.has(feature.id)
+        feature => !plottedPoiIds.has(String(feature.id))
     );
 
-    plottedPoiIds = currentPoiIds;
+    currentPoiIds.forEach(id => plottedPoiIds.add(id));
 
 
     const geojson = {
