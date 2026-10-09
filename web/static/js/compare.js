@@ -23,13 +23,18 @@ export function setupCompare() {
 );
 
     if (similarSection) {
-        similarSection
-            .querySelector(".section-header")
-            .addEventListener("click", () => {
-                if (similarSection.classList.contains("expanded")) {
-                    loadSimilarCities();
-                }
+        const header = similarSection.querySelector(".section-header");
+
+        if (header) {
+            header.addEventListener("click", () => {
+                // Let the accordion finish updating its expanded state first.
+                window.setTimeout(() => {
+                    if (similarSection.classList.contains("expanded")) {
+                        loadSimilarCities();
+                    }
+                }, 0);
             });
+        }
     }
 }
 
@@ -51,10 +56,21 @@ async function loadSimilarCities() {
         return;
     }
 
+    const requestCity = city;
+    const requestState = state;
+
     content.textContent = "Finding similar cities...";
 
     try {
-        const cities = await getCitySimilar(city, state);
+        const cities = await getCitySimilar(requestCity, requestState);
+
+        // Ignore results if the user has switched to another city.
+        const displayedCity = document.getElementById("city-name")?.textContent.trim();
+        const displayedState = document.getElementById("city-location")?.textContent.trim();
+
+        if (displayedCity !== requestCity || displayedState !== requestState) {
+            return;
+        }
 
         content.innerHTML = "";
 
@@ -95,7 +111,13 @@ async function loadSimilarCities() {
         });
     } catch (error) {
         console.error("Unable to load similar cities:", error);
-        content.textContent = "Unable to load similar cities.";
+
+        const displayedCity = document.getElementById("city-name")?.textContent.trim();
+        const displayedState = document.getElementById("city-location")?.textContent.trim();
+
+        if (displayedCity === requestCity && displayedState === requestState) {
+            content.textContent = "Unable to load similar cities. Try expanding this section again.";
+        }
     }
 }
 
@@ -113,8 +135,24 @@ async function openComparePanel(preselectedCity = null) {
         return;
     }
 
-    currentCity =
-        await getCity(cityName, state);
+    try {
+        currentCity = await getCity(cityName, state);
+    } catch (error) {
+        console.error("Failed to load current city for comparison:", error);
+
+        const existingPanel = document.getElementById("compare-panel");
+
+        if (existingPanel) {
+            existingPanel.textContent =
+                "Unable to load city data. Please try comparing again.";
+        } else {
+            window.alert(
+                `Unable to load ${cityName}, ${state} for comparison. Please try again.`
+            );
+        }
+
+        return;
+    }
 
     document
         .getElementById("compare-panel")
