@@ -98,3 +98,15 @@ export async function getPOIs(
 
     return response.json();
 }
+
+export async function getNeighborhoodBoundaries(city, state) {
+    const response = await fetch(
+        `${API_BASE}/api/neighborhood-boundaries/${encodeURIComponent(city)}/${encodeURIComponent(state)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Failed to load neighborhood boundaries");
+    }
+
+    return response.json();
+}

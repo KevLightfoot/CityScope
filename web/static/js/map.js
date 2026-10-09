@@ -1,5 +1,5 @@
 import * as maplibregl from "https://unpkg.com/maplibre-gl@6.13.0/dist/maplibre-gl.mjs";
-import { getBoundary } from "./api.js";
+import { getBoundary, getNeighborhoodBoundaries } from "./api.js";
 
 let map;
 let marker = null;
@@ -9,6 +9,8 @@ let poiFeatures = [];
 let poiVisible = false;
 let activePoiCategory = null;
 let poiPopup = null;
+let currentCity = null;
+let neighborhoodVisible = false;
 
 
 export function setupMap() {
@@ -117,6 +119,8 @@ export async function showCityOnMap(city) {
     if (marker) {
         marker.remove();
     }
+
+    currentCity = city;
 
 
     const popup =
@@ -701,5 +705,163 @@ export function closePOIPopup() {
     if (poiPopup) {
         poiPopup.remove();
         poiPopup = null;
+    }
+}
+
+export async function showNeighborhoodBoundaries() {
+
+    if (!map || !currentCity) {
+        return;
+    }
+
+    neighborhoodVisible = true;
+
+    try {
+
+        const data = await getNeighborhoodBoundaries(
+            currentCity.city,
+            currentCity.state
+        );
+
+        const features = data.results.map(neighborhood => ({
+            type: "Feature",
+            geometry: JSON.parse(neighborhood.geojson),
+            properties: {
+                nbhd_id: neighborhood.nbhd_id,
+                neighborhood: neighborhood.neighborhood,
+                city: neighborhood.city,
+                state: neighborhood.state
+            }
+        }));
+
+        const geojson = {
+            type: "FeatureCollection",
+            features
+        };
+
+        const addNeighborhoodLayers = () => {
+
+            if (map.getSource("neighborhood-boundaries")) {
+                map.getSource("neighborhood-boundaries")
+                    .setData(geojson);
+            } else {
+
+                map.addSource("neighborhood-boundaries", {
+                    type: "geojson",
+                    data: geojson
+                });
+
+                map.addLayer({
+                    id: "neighborhood-boundaries-fill",
+                    type: "fill",
+                    source: "neighborhood-boundaries",
+                    paint: {
+                        "fill-color": "#3388ff",
+                        "fill-opacity": 0.06
+                    }
+                });
+
+                map.addLayer({
+                    id: "neighborhood-boundaries-outline",
+                    type: "line",
+                    source: "neighborhood-boundaries",
+                    paint: {
+                        "line-color": "#3388ff",
+                        "line-width": 2,
+                        "line-opacity": 0.75
+                    }
+                });
+
+                map.on(
+                    "click",
+                    "neighborhood-boundaries-fill",
+                    event => {
+
+                        const feature =
+                            event.features?.[0];
+
+                        if (!feature) {
+                            return;
+                        }
+
+                        const name =
+                            feature.properties?.neighborhood;
+
+                        new maplibregl.Popup()
+                            .setLngLat(event.lngLat)
+                            .setHTML(
+                                `<strong>${name || "Neighborhood"}</strong>`
+                            )
+                            .addTo(map);
+                    }
+                );
+
+                map.on(
+                    "mouseenter",
+                    "neighborhood-boundaries-fill",
+                    () => {
+                        map.getCanvas().style.cursor = "pointer";
+                    }
+                );
+
+                map.on(
+                    "mouseleave",
+                    "neighborhood-boundaries-fill",
+                    () => {
+                        map.getCanvas().style.cursor = "";
+                    }
+                );
+            }
+
+            map.setLayoutProperty(
+                "neighborhood-boundaries-fill",
+                "visibility",
+                "visible"
+            );
+
+            map.setLayoutProperty(
+                "neighborhood-boundaries-outline",
+                "visibility",
+                "visible"
+            );
+        };
+
+        if (map.isStyleLoaded()) {
+            addNeighborhoodLayers();
+        } else {
+            map.once("load", addNeighborhoodLayers);
+        }
+
+    } catch (error) {
+        console.error(
+            "Failed to load neighborhood boundaries:",
+            error
+        );
+    }
+}
+
+
+export function hideNeighborhoodBoundaries() {
+
+    neighborhoodVisible = false;
+
+    if (!map) {
+        return;
+    }
+
+    if (map.getLayer("neighborhood-boundaries-fill")) {
+        map.setLayoutProperty(
+            "neighborhood-boundaries-fill",
+            "visibility",
+            "none"
+        );
+    }
+
+    if (map.getLayer("neighborhood-boundaries-outline")) {
+        map.setLayoutProperty(
+            "neighborhood-boundaries-outline",
+            "visibility",
+            "none"
+        );
     }
 }

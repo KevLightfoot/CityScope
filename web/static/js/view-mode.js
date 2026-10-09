@@ -1,3 +1,8 @@
+import {
+    showNeighborhoodBoundaries,
+    hideNeighborhoodBoundaries
+} from "./map.js";
+
 let currentMode = "city";
 
 export function setupViewMode() {
@@ -43,6 +48,12 @@ function setMode(mode) {
         "active",
         mode === "neighborhood"
     );
+
+    if (mode === "neighborhood") {
+        showNeighborhoodBoundaries();
+    } else {
+        hideNeighborhoodBoundaries();
+    }
 
     updatePanelForMode();
 
