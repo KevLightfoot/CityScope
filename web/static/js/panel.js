@@ -30,11 +30,10 @@ let currentNeighborhood = null;
 
 export function setupPanel() {
 
+
     document
         .getElementById("close-panel")
         .addEventListener("click", () => {
-            closePOIPanel();
-            hidePOIs();
             closePOIPopup();
 
             document
@@ -64,6 +63,7 @@ export function setupPanel() {
         hidePOIs();
         closePOIPopup();
     });
+
 
 
     document
