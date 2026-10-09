@@ -43,7 +43,7 @@ export function setupViewMode() {
 
 
 export function setMode(mode) {
-
+    document.getElementById("neighborhood-compare-panel")?.remove();
     closePOIPanel();
     hidePOIs();
      closePOIPopup();

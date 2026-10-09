@@ -59,6 +59,8 @@ window.addEventListener("cityscope:neighborhood-changing", () => {
 
 
 export async function openPOIPanel(selectedCategory) {
+    document.getElementById("neighborhood-compare-panel")?.remove();
+
     category = selectedCategory || "";
 
     const neighborhoodPanel =
