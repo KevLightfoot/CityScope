@@ -2,6 +2,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import lower, col
+import json
 
 app = FastAPI(title="CityScope API")
 
@@ -47,10 +48,11 @@ boundaries = (
 
 boundaries.count()
 
-neighborhood_boundaries = (
-    spark.read
-    .parquet("data/processed/neighborhood_boundaries")
-)
+with open(
+    "data/processed/neighborhood_boundaries.json",
+    "r"
+) as f:
+    neighborhood_boundaries = json.load(f)
 
 
 # ---------------------------------------------------------
