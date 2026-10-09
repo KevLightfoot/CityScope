@@ -787,6 +787,26 @@ export async function showNeighborhoodBoundaries() {
                         const name =
                             feature.properties?.neighborhood;
 
+                        const nbhdId =
+                            feature.properties?.nbhd_id;
+
+                        const city =
+                            feature.properties?.city;
+
+                        const state =
+                            feature.properties?.state;
+
+                        window.dispatchEvent(
+                            new CustomEvent("cityscope:neighborhood-selected", {
+                                detail: {
+                                    city,
+                                    state,
+                                    neighborhood: name,
+                                    nbhd_id: nbhdId
+                                }
+                            })
+                        );
+
                         new maplibregl.Popup()
                             .setLngLat(event.lngLat)
                             .setHTML(

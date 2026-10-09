@@ -5,7 +5,8 @@ import {
 
 import {
     getWeather,
-    getHousing
+    getHousing, 
+    getNeighborhood
 } from "./api.js";
 
 import {
@@ -23,7 +24,139 @@ import { openPOIPanel,
 let currentCity = null;
 let housingRequestId = 0;
 
+let currentNeighborhood = null;
+
 export function setupPanel() {
+
+    window.addEventListener(
+        "cityscope:neighborhood-selected",
+        async event => {
+
+            const {
+                city,
+                state,
+                neighborhood,
+                nbhd_id
+            } = event.detail;
+
+            try {
+
+                const data =
+                    await getNeighborhood(
+                        city,
+                        state,
+                        nbhd_id
+                    );
+
+
+
+                currentNeighborhood = {
+                    city,
+                    state,
+                    neighborhood,
+                    nbhd_id
+                };    
+
+                currentCity = {
+                    ...data,
+                    city,
+                    state,
+                    nbhd_id
+                };
+
+                document.getElementById("city-panel")
+                    .classList.remove("hidden");
+
+                document.getElementById("city-name").textContent =
+                    data.nbhd_name || neighborhood || "Neighborhood";
+
+                document.getElementById("city-location").textContent =
+                    `${city}, ${state}`;
+
+                // =========================
+                // DEMOGRAPHICS
+                // =========================
+
+                setText(
+                    "population",
+                    formatNumber(data.pop)
+                );
+
+                setPercent(
+                    "white-percent",
+                    data.white_pct
+                );
+
+                setPercent(
+                    "black-percent",
+                    data.black_pct
+                );
+
+                setPercent(
+                    "asian-percent",
+                    data.asian_pct
+                );
+
+                setPercent(
+                    "other-race-percent",
+                    data.other_pct
+                );
+
+                // =========================
+                // HOUSING
+                // =========================
+
+                setText(
+                    "property-count",
+                    formatNumber(data.property_count)
+                );
+
+                setText(
+                    "home-price",
+                    formatWholeCurrency(data.median_list_price)
+                );
+
+                setText(
+                    "avg-list-price",
+                    formatWholeCurrency(data.avg_list_price)
+                );
+
+                setText(
+                    "median-price-sqft",
+                    formatWholeCurrency(data.median_price_per_sqft)
+                );
+
+                setText(
+                    "avg-sqft",
+                    data.avg_sqft != null
+                        ? `${Math.round(Number(data.avg_sqft)).toLocaleString()} sq ft`
+                        : "—"
+                );
+
+                // =========================
+                // POI
+                // =========================
+
+                setText(
+                    "poi-count",
+                    formatNumber(data.poi_count)
+                );
+
+                document
+                    .querySelectorAll(".panel-section")
+                    .forEach(section => {
+                        section.classList.remove("expanded");
+                    });
+
+            } catch (error) {
+
+                console.error(
+                    "Failed to load neighborhood:",
+                    error
+                );
+            }
+        }
+    );
 
     document
         .getElementById("close-panel")
