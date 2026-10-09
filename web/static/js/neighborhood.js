@@ -380,6 +380,216 @@ function createSimilarNeighborhood(
     return row;
 }
 
+async function openNeighborhoodComparison(selectedNeighborhood = null) {
+    if (!currentNeighborhood) {
+        return;
+    }
+
+    document.getElementById("neighborhood-compare-panel")?.remove();
+
+    const panel = document.createElement("aside");
+    panel.id = "neighborhood-compare-panel";
+    panel.innerHTML = `
+        <div class="compare-header">
+            <strong>Compare Neighborhoods</strong>
+            <button id="neighborhood-compare-close" type="button">×</button>
+        </div>
+        <div id="neighborhood-compare-current" class="compare-current"></div>
+        <div id="neighborhood-compare-choices"></div>
+        <div id="neighborhood-compare-table"></div>
+    `;
+
+    document.body.appendChild(panel);
+
+    panel.querySelector("#neighborhood-compare-close").addEventListener("click", () => {
+        panel.remove();
+    });
+
+    const currentLabel = panel.querySelector("#neighborhood-compare-current");
+    const choices = panel.querySelector("#neighborhood-compare-choices");
+    const table = panel.querySelector("#neighborhood-compare-table");
+
+    currentLabel.textContent =
+        `Current neighborhood: ${currentNeighborhood.neighborhood}, ${currentNeighborhood.city}, ${currentNeighborhood.state}`;
+
+    try {
+        if (selectedNeighborhood) {
+            await renderNeighborhoodComparison(selectedNeighborhood, panel);
+            return;
+        }
+
+        choices.textContent = "Finding neighborhoods to compare...";
+
+        const similar = await getNeighborhoodSimilar(
+            currentNeighborhood.city,
+            currentNeighborhood.neighborhood
+        );
+
+        if (currentNeighborhood !== null) {
+            choices.innerHTML = "";
+        }
+
+        const candidates = [
+            ...(similar.same_city || []),
+            ...(similar.other_cities || [])
+        ];
+
+        if (!candidates.length) {
+            choices.textContent = "No similar neighborhoods are available to compare.";
+            return;
+        }
+
+        const heading = document.createElement("p");
+        heading.className = "neighborhood-compare-help";
+        heading.textContent = "Choose a neighborhood to compare:";
+        choices.appendChild(heading);
+
+        candidates.forEach(candidate => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "compare-city-result";
+            button.textContent =
+                `${candidate.nbhd_name}, ${candidate.city}, ${candidate.state}`;
+
+            button.addEventListener("click", async () => {
+                choices.textContent = "";
+                table.textContent = "Loading comparison...";
+
+                try {
+                    await renderNeighborhoodComparison(candidate, panel);
+                } catch (error) {
+                    console.error("Neighborhood comparison failed:", error);
+                    table.textContent = "Unable to load this comparison. Please try another neighborhood.";
+                }
+            });
+
+            choices.appendChild(button);
+        });
+    } catch (error) {
+        console.error("Failed to prepare neighborhood comparison:", error);
+        choices.textContent = "Unable to load similar neighborhoods. Please try again.";
+    }
+}
+
+async function renderNeighborhoodComparison(other, panel) {
+    if (!currentNeighborhood) {
+        return;
+    }
+
+    const table = panel.querySelector("#neighborhood-compare-table");
+    const choices = panel.querySelector("#neighborhood-compare-choices");
+
+    table.textContent = "Loading comparison...";
+
+    const current = await getNeighborhood(
+        currentNeighborhood.city,
+        currentNeighborhood.state,
+        currentNeighborhood.nbhd_id
+    );
+
+    const comparison = await getNeighborhood(
+        other.city,
+        other.state,
+        other.nbhd_id
+    );
+
+    const formatNumberValue = value => {
+        if (value === null || value === undefined || value === "") {
+            return "—";
+        }
+
+        const number = Number(value);
+        return Number.isFinite(number) ? number.toLocaleString(undefined, {
+            maximumFractionDigits: 1
+        }) : "—";
+    };
+
+    const formatPercentValue = value => {
+        if (value === null || value === undefined || value === "") {
+            return "—";
+        }
+
+        const number = Number(value);
+        return Number.isFinite(number) ? `${number.toFixed(1)}%` : "—";
+    };
+
+    const formatCurrencyValue = value => {
+        if (value === null || value === undefined || value === "") {
+            return "—";
+        }
+
+        const number = Number(value);
+        return Number.isFinite(number)
+            ? `$${Math.round(number).toLocaleString()}`
+            : "—";
+    };
+
+    const grid = document.createElement("div");
+    grid.className = "compare-grid neighborhood-compare-grid";
+
+    const addCell = (value, className = "") => {
+        const cell = document.createElement("div");
+        cell.textContent = value;
+        if (className) cell.className = className;
+        grid.appendChild(cell);
+    };
+
+    addCell("");
+    addCell(`${current.nbhd_name || currentNeighborhood.neighborhood}`);
+    addCell(`${comparison.nbhd_name || other.nbhd_name}`);
+
+    const addSection = title => addCell(title, "compare-category");
+
+    const addMetric = (label, field, formatter = formatNumberValue) => {
+        addCell(label);
+        addCell(formatter(current[field]));
+        addCell(formatter(comparison[field]));
+    };
+
+    addSection("DEMOGRAPHICS");
+    addMetric("Population", "pop");
+    addMetric("White", "white_pct", formatPercentValue);
+    addMetric("Black", "black_pct", formatPercentValue);
+    addMetric("Hispanic", "hisp_pct", formatPercentValue);
+    addMetric("Asian", "asian_pct", formatPercentValue);
+    addMetric("American Indian / Alaska Native", "aian_pct", formatPercentValue);
+    addMetric("Native Hawaiian / Pacific Islander", "nhpi_pct", formatPercentValue);
+    addMetric("Other Race", "other_pct", formatPercentValue);
+    addMetric("Two or More Races", "two_pct", formatPercentValue);
+
+    addSection("HOUSING");
+    addMetric("Properties", "property_count");
+    addMetric("Median List Price", "median_list_price", formatCurrencyValue);
+    addMetric("Average List Price", "avg_list_price", formatCurrencyValue);
+    addMetric("Median Price / Sq Ft", "median_price_per_sqft", formatCurrencyValue);
+    addMetric("Average Sq Ft", "avg_sqft");
+
+    addSection("POINTS OF INTEREST");
+    addMetric("Total POIs", "poi_count");
+    addMetric("Food", "food_count");
+    addMetric("Grocery", "grocery_count");
+    addMetric("Healthcare", "healthcare_count");
+    addMetric("Education", "education_count");
+    addMetric("Shopping", "shopping_count");
+    addMetric("Fitness", "fitness_count");
+    addMetric("Recreation", "recreation_count");
+    addMetric("Entertainment", "entertainment_count");
+
+    table.replaceChildren(grid);
+    choices.replaceChildren();
+
+    const chooseAnother = document.createElement("button");
+    chooseAnother.type = "button";
+    chooseAnother.className = "compare-city-result";
+    chooseAnother.textContent = "← Choose another neighborhood";
+    chooseAnother.addEventListener("click", () => {
+        table.replaceChildren();
+        openNeighborhoodComparison();
+    });
+
+    choices.appendChild(chooseAnother);
+}
+
 export function setupNeighborhood() {
     window.addEventListener(
         "cityscope:neighborhood-selected",
@@ -426,16 +636,18 @@ export function setupNeighborhood() {
         }
     );
 
-    const closeButton =
-        document.getElementById(
-            "close-neighborhood-panel"
-        );
+    const closeButton = document.getElementById("close-neighborhood-panel");
 
     if (closeButton) {
-        closeButton.addEventListener(
-            "click",
-            closeNeighborhoodPanel
-        );
+        closeButton.addEventListener("click", closeNeighborhoodPanel);
+    }
+
+    const compareButton = document.getElementById("compare-neighborhood-button");
+
+    if (compareButton) {
+        compareButton.addEventListener("click", () => {
+            openNeighborhoodComparison();
+        });
     }
 }
 
