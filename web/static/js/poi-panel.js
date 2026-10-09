@@ -4,10 +4,11 @@ import {
 } from "./api.js";
 
 import {
+    closePOIPopup,
+    clearPOICategory,
+    clearPOIs,
     setPOIs,
-    showPOIs, 
-    hidePOIs,
-    closePOIPopup
+    showPOIs
 } from "./map.js";
 
 
@@ -155,18 +156,21 @@ function renderPanel() {
             Loading...
         </div>
 
+
         <div class="poi-actions">
-
-
-            <button id="poi-all">
+            <button id="poi-all" type="button">
                 Show All ${title(category)} on Map
             </button>
 
-            <button id="poi-reset">
-                Reset POIs
+            <button id="poi-clear-category" type="button">
+                Clear ${title(category)}
             </button>
 
+            <button id="poi-reset" type="button">
+                Clear All POIs
+            </button>
         </div>
+
     `;
 
     document.body.appendChild(panel);
@@ -218,13 +222,40 @@ function renderPanel() {
 
         });
 
+
+    document
+        .getElementById("poi-clear-category")
+        .onclick = () => {
+            if (!category) {
+                alert("Open a specific POI category to clear it.");
+                return;
+            }
+
+            closePOIPopup();
+            clearPOICategory(category);
+
+            for (const [id, poi] of selected.entries()) {
+                if (
+                    String(poi.cityscope_category || "").toLowerCase() ===
+                    category.toLowerCase()
+                ) {
+                    selected.delete(id);
+                }
+            }
+            
+            offset = 0;
+            loadPOIs();
+        };
+
     document
         .getElementById("poi-reset")
         .onclick = () => {
             closePOIPopup();
-            hidePOIs();
-            setPOIs([]);
+            clearPOIs();
+            selected.clear();
+            closePOIPanel();
         };
+
 }
 
 

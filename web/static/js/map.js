@@ -945,6 +945,74 @@ export function showPOIs(category) {
     activePoiCategory = category;
 }
 
+
+export function clearPOICategory(category) {
+    if (!category) return;
+
+    const normalizedCategory = category.toLowerCase();
+
+    poiFeatures = poiFeatures.filter(
+        poi =>
+            String(poi.cityscope_category || "").toLowerCase() !==
+            normalizedCategory
+    );
+
+    plottedPoiIds = new Set(
+        poiFeatures.map(
+            poi => String(
+                poi.id ??
+                `${Number(poi.longitude)}:${Number(poi.latitude)}:${poi.name || ""}`
+            )
+        )
+    );
+
+    if (poiPopup) {
+        poiPopup.remove();
+        poiPopup = null;
+    }
+
+    const source = map?.getSource("poi-properties");
+
+    if (source) {
+        source.setData({
+            type: "FeatureCollection",
+            features: poiFeatures
+                .map(poi => {
+                    const lat = Number(poi.latitude);
+                    const lng = Number(poi.longitude);
+
+                    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                        return null;
+                    }
+
+                    return {
+                        type: "Feature",
+                        id: poi.id ?? `${lng}:${lat}:${poi.name || ""}`,
+                        geometry: {
+                            type: "Point",
+                            coordinates: [lng, lat]
+                        },
+                        properties: poi
+                    };
+                })
+                .filter(Boolean)
+        });
+    }
+
+    poiVisible = poiFeatures.length > 0;
+
+    if (map?.getLayer("poi-properties")) {
+        map.setLayoutProperty(
+            "poi-properties",
+            "visibility",
+            poiVisible ? "visible" : "none"
+        );
+    }
+
+    activePoiCategory = null;
+}
+
+
 export function hidePOIs() {
 
     if (map.getLayer("poi-properties")) {
