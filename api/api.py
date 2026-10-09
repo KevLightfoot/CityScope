@@ -1,7 +1,9 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import lower, col
+from pyspark.sql.functions import lower, col, round, exp
+from pyspark.ml.feature import BucketedRandomProjectionLSHModel
+
 import json
 
 app = FastAPI(title="CityScope API")
@@ -53,6 +55,8 @@ with open(
     "r"
 ) as f:
     neighborhood_boundaries = json.load(f)
+
+
 
 
 # ---------------------------------------------------------
@@ -140,6 +144,21 @@ STATE_FIPS = {
     "56": "WY"
 }
 
+# ---------------------------------------------------------
+# NEIGHBORHOOD SIMILARITY
+# ---------------------------------------------------------
+
+neighborhood_vectors = (
+    spark.read
+    .parquet("data/processed/neighborhood_similarity_vectors")
+    .cache()
+)
+
+neighborhood_vectors.count()
+
+neighborhood_lsh_model = BucketedRandomProjectionLSHModel.load(
+    "data/processed/neighborhood_similarity_model"
+)
 
 # ---------------------------------------------------------
 # CITY SEARCH
@@ -261,6 +280,120 @@ def get_neighborhood_boundaries(city: str, state: str):
 
     return {
         "results": results
+    }
+
+# ---------------------------------------------------------
+# NEIGHBORHOOD SIMILARITY
+# ---------------------------------------------------------
+
+@app.get("/api/neighborhood-similar")
+def get_neighborhood_similar(
+    city: str,
+    neighborhood: str
+):
+    city_key = city.strip().lower()
+    neighborhood_key = neighborhood.strip().lower()
+
+    query = (
+        neighborhood_vectors
+        .filter(
+            (lower(col("city")) == city_key) &
+            (lower(col("nbhd_name")) == neighborhood_key)
+        )
+        .limit(1)
+    )
+
+    if query.count() == 0:
+        raise HTTPException(
+            status_code=404,
+            detail="Neighborhood not found"
+        )
+
+    query_row = query.collect()[0]
+
+    query_vector = query_row["features"]
+    query_id = query_row["nbhd_id"]
+    query_state = query_row["state"]
+
+    valid_names = (
+        col("nbhd_name").isNotNull() &
+        (col("nbhd_name") != "") &
+        col("nbhd_name").rlike(".{2,}") &
+        ~col("nbhd_name").rlike("(?i)https?://") &
+        ~col("nbhd_name").rlike("^[0-9]+$")
+    )
+
+    same_city_candidates = (
+        neighborhood_vectors
+        .filter(
+            (lower(col("city")) == city_key) &
+            (col("state") == query_state)
+        )
+        .filter(valid_names)
+    )
+
+    same_city = (
+        neighborhood_lsh_model
+        .approxNearestNeighbors(
+            same_city_candidates,
+            query_vector,
+            10
+        )
+        .filter(
+            ~(
+                (col("nbhd_id") == query_id) &
+                (lower(col("nbhd_name")) == neighborhood_key)
+            )
+        )
+        .orderBy("distCol")
+        .limit(3)
+        .withColumn(
+            "match_score",
+            round(10 * exp(-col("distCol") / 5), 1)
+        )
+    )
+
+    other_city_candidates = (
+        neighborhood_vectors
+        .filter(
+            ~(
+                (lower(col("city")) == city_key) &
+                (col("state") == query_state)
+            )
+        )
+        .filter(valid_names)
+    )
+
+    other_cities = (
+        neighborhood_lsh_model
+        .approxNearestNeighbors(
+            other_city_candidates,
+            query_vector,
+            100
+        )
+        .orderBy("distCol")
+        .limit(3)
+        .withColumn(
+            "match_score",
+            round(10 * exp(-col("distCol") / 5), 1)
+        )
+    )
+
+    def format_results(df):
+        return [
+            {
+                "city": row["city"],
+                "state": row["state"],
+                "nbhd_name": row["nbhd_name"],
+                "nbhd_id": row["nbhd_id"],
+                "match_score": row["match_score"]
+            }
+            for row in df.collect()
+        ]
+
+    return {
+        "same_city": format_results(same_city),
+        "other_cities": format_results(other_cities)
     }
 
 # ---------------------------------------------------------
