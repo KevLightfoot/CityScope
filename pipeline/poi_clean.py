@@ -6,7 +6,7 @@ import duckdb
 import os
 
 RELEASE = "2026-09-23.1"
-OUTPUT = "data/processed/poi"
+OUTPUT = "data/processed/poi_with_addy"
 
 os.makedirs(OUTPUT, exist_ok=True)
 
@@ -32,6 +32,7 @@ COPY (
         id,
         names.primary AS name,
         geometry,
+        addresses,
         confidence,
         basic_category,
         taxonomy.primary AS category,

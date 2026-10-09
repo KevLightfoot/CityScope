@@ -43,7 +43,7 @@ places = (
 # ---------------------------------------------------------
 
 pois = (
-    spark.read.parquet("data/processed/poi")
+    spark.read.parquet("data/processed/poi_with_addy")
     .select(
         "id",
         "name",
@@ -52,6 +52,7 @@ pois = (
         "basic_category",
         "confidence",
         "geometry",
+        "addresses",
         "state"
     )
 )
@@ -142,6 +143,7 @@ for state in states:
             "category",
             "basic_category",
             "confidence",
+            "addresses",
             "state",
             "place_GEOID",
             "place_name",
@@ -171,7 +173,7 @@ for state in states:
     # -----------------------------------------------------
 
     output_path = (
-        f"data/processed/poi_detail_states/state={state}"
+        f"data/processed/poi_detail_states_with_addy/state={state}"
     )
 
     (
@@ -191,7 +193,7 @@ for state in states:
 print("\nCOMBINING STATE OUTPUTS...")
 
 final = spark.read.parquet(
-    "data/processed/poi_detail_states"
+    "data/processed/poi_detail_states_with_addy"
 )
 
 
@@ -208,7 +210,7 @@ final = spark.read.parquet(
         "cityscope_category"
     )
     .parquet(
-        "data/processed/poi_detail"
+        "data/processed/poi_detail_with_addy"
     )
 )
 
@@ -229,7 +231,8 @@ final.select(
     "place_name",
     "state",
     "longitude",
-    "latitude"
+    "latitude",
+    "addresses"
 ).show(20, False)
 
 
