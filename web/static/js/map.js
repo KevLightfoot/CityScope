@@ -13,6 +13,7 @@ let poiVisible = false;
 let activePoiCategory = null;
 let poiPopup = null;
 let currentCity = null;
+let currentCityBounds = null;
 let neighborhoodVisible = false;
 let plottedPoiIds = new Set();
 let plottedHousingIds = new Set();
@@ -304,8 +305,8 @@ export async function showCityOnMap(city) {
     }
 
 
-    const bounds =
-        getGeoJsonBounds(geojson);
+    const bounds = getGeoJsonBounds(geojson);
+    currentCityBounds = bounds;
 
 
     if (bounds) {
@@ -1354,6 +1355,18 @@ export async function showNeighborhoodBoundaries() {
                                 !neighborhoodPanel.classList.contains("hidden")
                                     ? neighborhoodPanel.getBoundingClientRect().width
                                     : 0;
+
+                            if (currentCityBounds) {
+                                map.fitBounds(currentCityBounds, {
+                                    padding: {
+                                        top: 80,
+                                        bottom: 80,
+                                        left: 80,
+                                        right: panelWidth + 80
+                                    },
+                                    duration: 0
+                                });
+                            }
 
                             map.fitBounds(bounds, {
                                 padding: {
