@@ -1358,13 +1358,13 @@ export async function showNeighborhoodBoundaries() {
 
                             const zoomIntoNeighborhood = () => {
                                 map.fitBounds(bounds, {
-                                    adding: {
-                                        top: 120,
-                                        bottom: 120,
+                                    padding: {
+                                        top: 90,
+                                        bottom: 90,
                                         left: 80,
                                         right: panelWidth + 80
                                     },
-                                    maxZoom: 13,
+                                    maxZoom: 14,
                                     duration: 900,
                                     essential: true
                                 });
