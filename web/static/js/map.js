@@ -1333,10 +1333,6 @@ export async function showNeighborhoodBoundaries() {
                             return;
                         }
 
-                        if (poiAtClick.length > 0) {
-                            return;
-                        }
-
                         const feature =
                             event.features?.[0];
 
