@@ -529,7 +529,7 @@ export function showHousingProperties() {
             paint: {
                 "circle-radius": [
                     "*",
-                    9,
+                    6,
                     ["coalesce", ["feature-state", "animationProgress"], 1]
                 ],
                 "circle-color": "#ff6b35",
@@ -760,7 +760,7 @@ export function showPOIs(category) {
             paint: {
                 "circle-radius": [
                     "*",
-                    10,
+                    7.5,
                     ["coalesce", ["feature-state", "animationProgress"], 1]
                 ],
                 "circle-color": "#3CF527",
