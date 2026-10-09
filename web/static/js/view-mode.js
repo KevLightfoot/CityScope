@@ -36,7 +36,7 @@ export function setupViewMode() {
 }
 
 
-function setMode(mode) {
+export function setMode(mode) {
 
     currentMode = mode;
 
