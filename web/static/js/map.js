@@ -129,7 +129,8 @@ export function setupMap() {
             if (
                 layer.type === "symbol" &&
                 layer.id !== "poi-properties" &&
-                layer.id !== "housing-properties"
+                layer.id !== "housing-properties" &&
+                layer.id !== "neighborhood-housing-properties"
             ) {
 
                 map.setLayoutProperty(
@@ -578,6 +579,16 @@ export function plotNeighborhoodHousing(properties, boundary) {
             isPointInPolygon(lng, lat, geometry);
     });
 
+    console.log("[Neighborhood Housing]", {
+        receivedListings: properties?.length,
+        validCoordinates: (properties || []).filter(p =>
+            Number.isFinite(Number(p.lat)) &&
+            Number.isFinite(Number(p.lng))
+        ).length,
+        matchedNeighborhood: filtered.length,
+        geometryType: geometry?.type
+    });
+
     neighborhoodHousingProperties = filtered;
 
     const features = filtered.map((property, index) => ({
@@ -607,10 +618,14 @@ export function plotNeighborhoodHousing(properties, boundary) {
             source: "neighborhood-housing-properties",
             layout: {
                 "icon-image": "cityscope-pin-housing",
-                "icon-size": 0.7,
+                "icon-size": 0.85,
                 "icon-anchor": "bottom",
                 "icon-allow-overlap": true,
-                "icon-ignore-placement": true
+                "icon-ignore-placement": true,
+                visibility: "visible"
+            },
+            paint: {
+                "icon-opacity": 1
             }
         });
 
