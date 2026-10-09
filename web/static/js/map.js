@@ -532,7 +532,7 @@ export function showHousingProperties() {
                     6,
                     ["coalesce", ["feature-state", "animationProgress"], 1]
                 ],
-                "circle-color": "#ff6b35",
+                "circle-color": "#F472B6",
                 "circle-opacity": [
                     "*",
                     0.8,
@@ -789,7 +789,18 @@ export function showPOIs(category) {
                     7.5,
                     ["coalesce", ["feature-state", "animationProgress"], 1]
                 ],
-                "circle-color": "#3CF527",
+                "circle-color": [
+                    "match",
+                    ["get", "cityscope_category"],
+                    "Food", "#F97316",
+                    "Restaurants", "#F97316",
+                    "Education", "#38BDF8",
+                    "Healthcare", "#F43F5E",
+                    "Recreation", "#22C55E",
+                    "Shopping", "#A78BFA",
+                    "Transportation", "#FACC15",
+                    "#38BDF8"
+                ],
                 "circle-opacity": [
                     "*",
                     0.85,
