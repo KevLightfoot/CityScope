@@ -24,11 +24,34 @@ let scopeType = "city";
 let scopeId = null;
 let activePanelId = "city-panel";
 
+
 document.addEventListener("click", event => {
+    // Neighborhood category buttons
+    const neighborhoodButton = event.target.closest(
+        "#neighborhood-panel .poi-button"
+    );
+
+    if (neighborhoodButton) {
+        openPOIPanel(neighborhoodButton.dataset.category || "");
+        return;
+    }
+
+    // Existing neighborhood browse button, if present
     if (event.target.closest("#browse-neighborhood-pois")) {
         openPOIPanel("");
+        return;
+    }
+
+    // Existing city-level category buttons
+    const cityButton = event.target.closest(
+        "#city-panel .poi-button"
+    );
+
+    if (cityButton) {
+        openPOIPanel(cityButton.dataset.category || "");
     }
 });
+
 
 
 export async function openPOIPanel(selectedCategory) {
@@ -70,6 +93,10 @@ export async function openPOIPanel(selectedCategory) {
         if (!cityName || !state) return;
 
         city = await getCity(cityName, state);
+        if (!city || !city.place_GEOID) {
+            console.error("Could not find city:", cityName, state);
+            return;
+        }
         scopeId = city.place_GEOID;
     }
 
