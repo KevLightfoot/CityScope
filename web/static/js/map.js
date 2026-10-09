@@ -15,6 +15,74 @@ let neighborhoodVisible = false;
 let plottedPoiIds = new Set();
 let plottedHousingIds = new Set();
 
+function registerPinImages() {
+    if (!map) return;
+
+    const pinColors = {
+        food: "#FF1744",
+        grocery: "#00C853",
+        healthcare: "#F500D4",
+        education: "#2979FF",
+        shopping: "#FFEA00",
+        financial: "#8B4513",
+        fitness: "#FFFFFF",
+        recreation: "#00E5FF",
+        entertainment: "#FF9100",
+        lodging: "#000000",
+        religious: "#00897B",
+        housing: "#F472B6",
+        default: "#9E9E9E"
+    };
+
+    Object.entries(pinColors).forEach(([name, color]) => {
+        const imageId = `cityscope-pin-${name}`;
+
+        if (map.hasImage(imageId)) return;
+
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 80;
+
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+
+        // Draw the teardrop-shaped pin.
+        ctx.beginPath();
+        ctx.moveTo(32, 76);
+        ctx.bezierCurveTo(26, 65, 5, 43, 5, 27);
+        ctx.arc(32, 27, 27, Math.PI, 0, true);
+        ctx.bezierCurveTo(59, 43, 38, 65, 32, 76);
+        ctx.closePath();
+
+        ctx.fillStyle = color;
+        ctx.fill();
+
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.stroke();
+
+        // Cut a transparent hole through the pin.
+        ctx.globalCompositeOperation = "destination-out";
+        ctx.beginPath();
+        ctx.arc(32, 27, 7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalCompositeOperation = "source-over";
+
+        // Outline the hollow center.
+        ctx.beginPath();
+        ctx.arc(32, 27, 9, 0, Math.PI * 2);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = "#FFFFFF";
+        ctx.stroke();
+
+        map.addImage(
+            imageId,
+            ctx.getImageData(0, 0, canvas.width, canvas.height),
+            { pixelRatio: 2 }
+        );
+    });
+}
+
 
 export function setupMap() {
 
@@ -49,7 +117,7 @@ export function setupMap() {
         ]
     });
 
-
+    map.on("load", registerPinImages);
     map.on("styledata", () => {
 
         const layers =
@@ -58,7 +126,11 @@ export function setupMap() {
 
         layers.forEach(layer => {
 
-            if (layer.type === "symbol") {
+            if (
+                layer.type === "symbol" &&
+                layer.id !== "poi-properties" &&
+                layer.id !== "housing-properties"
+            ) {
 
                 map.setLayoutProperty(
                     layer.id,
@@ -522,26 +594,22 @@ export function showHousingProperties() {
 
         map.addLayer({
             id: "housing-properties",
-            type: "circle",
+            type: "symbol",
             source: "housing-properties",
-
-
+            layout: {
+                "icon-image": "cityscope-pin-housing",
+                "icon-size": 1,
+                "icon-anchor": "bottom",
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true
+            },
             paint: {
-                "circle-radius": [
+                "icon-opacity": [
                     "*",
-                    6,
+                    0.95,
                     ["coalesce", ["feature-state", "animationProgress"], 1]
-                ],
-                "circle-color": "#F472B6",
-                "circle-opacity": [
-                    "*",
-                    0.8,
-                    ["coalesce", ["feature-state", "animationProgress"], 1]
-                ],
-                "circle-stroke-color": "#ffffff",
-                "circle-stroke-width": 1
+                ]
             }
-
         });
 
         map.on(
@@ -779,41 +847,37 @@ export function showPOIs(category) {
 
         map.addLayer({
             id: "poi-properties",
-            type: "circle",
+            type: "symbol",
             source: "poi-properties",
-
-
-            paint: {
-                "circle-radius": [
-                    "*",
-                    7.5,
-                    ["coalesce", ["feature-state", "animationProgress"], 1]
-                ],
-                "circle-color": [
+            layout: {
+                "icon-image": [
                     "match",
                     ["downcase", ["to-string", ["get", "cityscope_category"]]],
-                    "food", "#FF1744",
-                    "grocery", "#00C853",
-                    "healthcare", "#F500D4",
-                    "education", "#2979FF",
-                    "shopping", "#FFEA00",
-                    "financial", "#8B4513",
-                    "fitness", "#FFFFFF",
-                    "recreation", "#00E5FF",
-                    "entertainment", "#FF9100",
-                    "lodging", "#000000",
-                    "religious", "#00897B",
-                    "#9E9E9E"
+                    "food", "cityscope-pin-food",
+                    "grocery", "cityscope-pin-grocery",
+                    "healthcare", "cityscope-pin-healthcare",
+                    "education", "cityscope-pin-education",
+                    "shopping", "cityscope-pin-shopping",
+                    "financial", "cityscope-pin-financial",
+                    "fitness", "cityscope-pin-fitness",
+                    "recreation", "cityscope-pin-recreation",
+                    "entertainment", "cityscope-pin-entertainment",
+                    "lodging", "cityscope-pin-lodging",
+                    "religious", "cityscope-pin-religious",
+                    "cityscope-pin-default"
                 ],
-                "circle-opacity": [
+                "icon-size": 1,
+                "icon-anchor": "bottom",
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true
+            },
+            paint: {
+                "icon-opacity": [
                     "*",
-                    0.85,
+                    0.95,
                     ["coalesce", ["feature-state", "animationProgress"], 1]
-                ],
-                "circle-stroke-color": "#ffffff",
-                "circle-stroke-width": 1
+                ]
             }
-
         });
 
         map.on(
