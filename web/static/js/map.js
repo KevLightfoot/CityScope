@@ -389,12 +389,16 @@ function animateMarkerLayer(layerId, sourceId, features) {
     function frame(now) {
         const t = Math.min((now - startTime) / duration, 1);
 
-        // A small overshoot gives each marker a bounce.
+        // Ease out with a slight overshoot to create a visible bounce.
         const progress = t < 1
-            ? Math.min(
-                1,
-                1 - Math.pow(1 - t, 3) +
-                0.12 * Math.sin(t * Math.PI * 3) * (1 - t)
+            ? Math.max(
+                0,
+                Math.min(
+                    1.15,
+                    1 +
+                    2.70158 * Math.pow(t - 1, 3) +
+                    1.70158 * Math.pow(t - 1, 2)
+                )
             )
             : 1;
 
@@ -970,19 +974,32 @@ export async function showNeighborhoodBoundaries() {
 
                         const bounds = getGeoJsonBounds(feature.geometry);
 
+
                         if (bounds) {
+                            const neighborhoodPanel =
+                                document.getElementById(
+                                    "neighborhood-panel"
+                                );
+
+                            const panelWidth =
+                                neighborhoodPanel &&
+                                !neighborhoodPanel.classList.contains("hidden")
+                                    ? neighborhoodPanel.getBoundingClientRect().width
+                                    : 0;
+
                             map.fitBounds(bounds, {
                                 padding: {
-                                    top: 80,
-                                    bottom: 80,
-                                    left: 80,
-                                    right: 500
+                                    top: 60,
+                                    bottom: 60,
+                                    left: 60,
+                                    right: panelWidth + 60
                                 },
                                 maxZoom: 15,
                                 duration: 1000,
                                 essential: true
                             });
                         }
+
 
                         const name =
                             feature.properties?.neighborhood;

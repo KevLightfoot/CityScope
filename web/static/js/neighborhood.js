@@ -8,6 +8,7 @@ import {
 } from "./utils.js";
 
 let currentNeighborhood = null;
+let neighborhoodRequestId = 0;
 
 function setText(id, value) {
     const element =
@@ -218,19 +219,6 @@ function renderNeighborhood(data, city, state, neighborhood) {
         );
     });
 
-    // ---------------------------------------------------------
-    // CLOSE SECTIONS
-    // ---------------------------------------------------------
-
-    document
-        .querySelectorAll(
-            "#neighborhood-panel .panel-section"
-        )
-        .forEach(section => {
-            section.classList.remove(
-                "expanded"
-            );
-        });
 
     loadSimilarNeighborhoods(
         city,
@@ -396,6 +384,8 @@ export function setupNeighborhood() {
     window.addEventListener(
         "cityscope:neighborhood-selected",
         async event => {
+            const requestId = ++neighborhoodRequestId;
+
             const {
                 city,
                 state,
@@ -411,6 +401,11 @@ export function setupNeighborhood() {
                         nbhd_id
                     );
 
+                // Ignore responses from older clicks.
+                if (requestId !== neighborhoodRequestId) {
+                    return;
+                }
+
                 renderNeighborhood(
                     data,
                     city,
@@ -419,6 +414,10 @@ export function setupNeighborhood() {
                 );
 
             } catch (error) {
+                if (requestId !== neighborhoodRequestId) {
+                    return;
+                }
+
                 console.error(
                     "Failed to load neighborhood:",
                     error
@@ -445,6 +444,7 @@ export function getCurrentNeighborhood() {
 }
 
 export function clearNeighborhood() {
+    neighborhoodRequestId++;
     currentNeighborhood = null;
     closeNeighborhoodPanel();
 }
