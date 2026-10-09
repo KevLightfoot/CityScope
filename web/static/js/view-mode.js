@@ -16,7 +16,9 @@ export function setupViewMode() {
         document.getElementById("city-mode-button");
 
     const neighborhoodButton =
-        document.getElementById("neighborhood-mode-button");
+        document.getElementById(
+            "neighborhood-mode-button"
+        );
 
     if (!cityButton || !neighborhoodButton) {
         return;
@@ -38,13 +40,25 @@ export function setupViewMode() {
 
 export function setMode(mode) {
 
+    if (mode === "neighborhood" && !neighborhoodAvailable) {
+        mode = "city";
+    }
+
     currentMode = mode;
 
     const cityButton =
         document.getElementById("city-mode-button");
 
     const neighborhoodButton =
-        document.getElementById("neighborhood-mode-button");
+        document.getElementById(
+            "neighborhood-mode-button"
+        );
+
+    const cityPanel =
+        document.getElementById("city-panel");
+
+    const neighborhoodPanel =
+        document.getElementById("neighborhood-panel");
 
     cityButton?.classList.toggle(
         "active",
@@ -57,13 +71,15 @@ export function setMode(mode) {
     );
 
     if (mode === "neighborhood") {
-       if (!neighborhoodAvailable) {
-            setMode("city");
-            return;
-        }
+
+        cityPanel?.classList.add("hidden");
 
         showNeighborhoodBoundaries();
+
     } else {
+
+        neighborhoodPanel?.classList.add("hidden");
+
         hideNeighborhoodBoundaries();
     }
 
@@ -81,45 +97,29 @@ export function setMode(mode) {
 
 function updatePanelForMode() {
 
-    const sections =
-        document.querySelectorAll(".panel-section");
+    const cityPanel =
+        document.getElementById("city-panel");
 
-    sections.forEach(section => {
+    const neighborhoodPanel =
+        document.getElementById(
+            "neighborhood-panel"
+        );
 
-        const title =
-            section
-                .querySelector(".section-header span")
-                ?.textContent
-                .trim()
-                .toLowerCase();
+    if (currentMode === "neighborhood") {
 
-        if (!title) {
-            return;
+        cityPanel?.classList.add("hidden");
+
+        if (neighborhoodPanel) {
+            neighborhoodPanel.classList.remove("hidden");
         }
 
-        const neighborhoodVisible =
-            title === "demographics" ||
-            title === "housing" ||
-            title === "points of interest";
+        return;
+    }
 
-        if (currentMode === "neighborhood") {
-            section.style.display =
-                neighborhoodVisible
-                    ? ""
-                    : "none";
-        } else {
-            section.style.display = "";
-        }
-    });
+    neighborhoodPanel?.classList.add("hidden");
 
-    const compareButton =
-        document.getElementById("compare-city-button");
-
-    if (compareButton) {
-        compareButton.textContent =
-            currentMode === "neighborhood"
-                ? "Compare Neighborhoods"
-                : "Compare Cities";
+    if (cityPanel) {
+        cityPanel.classList.remove("hidden");
     }
 }
 
@@ -128,7 +128,11 @@ export function getViewMode() {
     return currentMode;
 }
 
-export async function setNeighborhoodAvailability(city, state) {
+
+export async function setNeighborhoodAvailability(
+    city,
+    state
+) {
 
     try {
 
