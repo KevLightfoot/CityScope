@@ -678,3 +678,107 @@ body {
     background: #2b323a;
     color: #ffffff;
 }
+
+/* =========================
+   NEIGHBORHOOD POLISH
+   ========================= */
+
+#neighborhood-panel #compare-neighborhood-button {
+    grid-column: 1 / -1;
+    width: 100%;
+    margin-top: 8px;
+}
+
+/* =========================
+   SIMILAR NEIGHBORHOODS
+   ========================= */
+
+#neighborhood-similar-content {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+#neighborhood-panel .similar-group-title {
+    margin: 8px 0 2px;
+    color: #9fa8b2;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.7px;
+    text-transform: uppercase;
+}
+
+#neighborhood-panel .similar-neighborhood {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 11px;
+    background: #1d2329;
+    border: 1px solid #303840;
+    border-radius: 7px;
+}
+
+#neighborhood-panel .similar-neighborhood > div {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    gap: 4px;
+}
+
+#neighborhood-panel .similar-neighborhood span {
+    color: #f2f4f7;
+    font-size: 13px;
+    font-weight: 600;
+    overflow-wrap: anywhere;
+}
+
+#neighborhood-panel .similar-neighborhood small {
+    color: #9fa8b2;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+#neighborhood-panel .similar-neighborhood strong {
+    flex-shrink: 0;
+    min-width: 42px;
+    padding: 5px 7px;
+    background: #2b323a;
+    border: 1px solid #39414a;
+    border-radius: 6px;
+    color: #f2f4f7;
+    font-size: 13px;
+    text-align: center;
+}
+
+/* =========================
+   NEIGHBORHOOD POI TILES
+   ========================= */
+
+#neighborhood-panel .poi-buttons {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 7px;
+}
+
+#neighborhood-panel .poi-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+    min-height: 46px;
+    padding: 7px 4px;
+    text-align: center;
+    overflow-wrap: anywhere;
+}
+
+#neighborhood-panel .poi-button strong {
+    color: #f2f4f7;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+#neighborhood-panel .poi-button:hover {
+    border-color: #566575;
+}
