@@ -283,6 +283,44 @@ def get_neighborhood_boundaries(city: str, state: str):
     }
 
 # ---------------------------------------------------------
+# NEIGHBORHOOD DATA
+# ---------------------------------------------------------
+
+neighborhood_cityscope = (
+    spark.read
+    .parquet("data/processed/neighborhood_cityscope")
+    .cache()
+)
+
+neighborhood_cityscope.count()
+
+
+@app.get("/api/neighborhood/{city}/{state}/{nbhd_id}")
+def get_neighborhood(
+    city: str,
+    state: str,
+    nbhd_id: float
+):
+    result = (
+        neighborhood_cityscope
+        .filter(
+            (lower(col("city")) == city.strip().lower()) &
+            (lower(col("state")) == state.strip().lower()) &
+            (col("nbhd_id") == nbhd_id)
+        )
+        .limit(1)
+        .collect()
+    )
+
+    if not result:
+        raise HTTPException(
+            status_code=404,
+            detail="Neighborhood not found"
+        )
+
+    return result[0].asDict()
+
+# ---------------------------------------------------------
 # NEIGHBORHOOD SIMILARITY
 # ---------------------------------------------------------
 

@@ -139,3 +139,19 @@ export async function getNeighborhoodSimilar(city, neighborhood) {
 
     return response.json();
 }
+
+export async function getNeighborhood(
+    city,
+    state,
+    nbhdId
+) {
+    const response = await fetch(
+        `${API_BASE}/api/neighborhood/${encodeURIComponent(city)}/${encodeURIComponent(state)}/${encodeURIComponent(nbhdId)}`
+    );
+
+    if (!response.ok) {
+        throw new Error("Neighborhood data not found");
+    }
+
+    return response.json();
+}
