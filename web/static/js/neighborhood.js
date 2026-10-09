@@ -192,6 +192,45 @@ function renderNeighborhood(data, city, state, neighborhood) {
             : "—"
     );
 
+    const housingSection = Array.from(
+        document.querySelectorAll("#neighborhood-panel .panel-section")
+    ).find(section =>
+        section.querySelector(".section-header span")
+            ?.textContent.trim() === "Housing"
+    );
+
+    if (housingSection) {
+        let button = document.getElementById(
+            "show-neighborhood-housing-button"
+        );
+
+        if (!button) {
+            button = document.createElement("button");
+            button.id = "show-neighborhood-housing-button";
+            button.type = "button";
+            button.className = "show-housing-button";
+            button.textContent = "Show Neighborhood Properties on Map";
+
+            const content = housingSection.querySelector(
+                ".section-content, .section-body"
+            );
+
+            if (content) {
+                content.appendChild(button);
+            } else {
+                housingSection.appendChild(button);
+            }
+        }
+
+        button.onclick = () => {
+            document.dispatchEvent(
+                new CustomEvent("cityscope:plot-neighborhood-housing", {
+                    detail: currentNeighborhood
+                })
+            );
+        };
+    }
+
     // ---------------------------------------------------------
     // POINTS OF INTEREST
     // ---------------------------------------------------------

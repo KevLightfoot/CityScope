@@ -5,8 +5,9 @@ import {
 
 import {
     getWeather,
-    getHousing, 
-    getNeighborhood
+    getHousing,
+    getNeighborhood,
+    getNeighborhoodBoundaries
 } from "./api.js";
 
 import {
@@ -110,6 +111,56 @@ export function setupPanel() {
             }
         });
     }
+
+        document.addEventListener(
+        "cityscope:plot-neighborhood-housing",
+        async event => {
+            const neighborhood = event.detail;
+            const button = document.getElementById(
+                "show-neighborhood-housing-button"
+            );
+
+            if (!neighborhood || !button) return;
+
+            button.disabled = true;
+            button.textContent = "Loading Neighborhood Properties...";
+
+            try {
+                const [properties, boundaryData] = await Promise.all([
+                    getHousing(neighborhood.city, neighborhood.state),
+                    getNeighborhoodBoundaries(
+                        neighborhood.city,
+                        neighborhood.state
+                    )
+                ]);
+
+                const boundary = boundaryData.results.find(item =>
+                    Number(item.nbhd_id) === Number(neighborhood.nbhd_id)
+                );
+
+                if (!boundary) {
+                    throw new Error("Neighborhood boundary not found");
+                }
+
+                document.dispatchEvent(
+                    new CustomEvent("cityscope:neighborhood-housing-loaded", {
+                        detail: {
+                            properties,
+                            boundary: JSON.parse(boundary.geojson),
+                            neighborhood
+                        }
+                    })
+                );
+
+                button.textContent = "Neighborhood Properties Loaded";
+            } catch (error) {
+                console.error("Neighborhood housing plot failed:", error);
+                button.textContent = "Neighborhood Properties Unavailable";
+            } finally {
+                button.disabled = false;
+            }
+        }
+    );
 }
 
 export function showCity(city) {
