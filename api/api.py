@@ -225,28 +225,18 @@ def get_boundary(geoid: str):
 
 @app.get("/api/neighborhood-boundaries/{city}/{state}")
 def get_neighborhood_boundaries(city: str, state: str):
-    result = (
-        neighborhood_boundaries
-        .filter(
-            (lower(col("city")) == city.strip().lower()) &
-            (lower(col("state")) == state.strip().lower())
-        )
-        .select(
-            "nbhd_id",
-            "neighborhood",
-            "city",
-            "state",
-            "state_abbr",
-            "geojson"
-        )
-        .collect()
-    )
+    city_key = city.strip().lower()
+    state_key = state.strip().lower()
+
+    results = [
+        neighborhood
+        for neighborhood in neighborhood_boundaries
+        if neighborhood["city"].strip().lower() == city_key
+        and neighborhood["state"].strip().lower() == state_key
+    ]
 
     return {
-        "results": [
-            row.asDict()
-            for row in result
-        ]
+        "results": results
     }
 
 # ---------------------------------------------------------
