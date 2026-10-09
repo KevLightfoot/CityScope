@@ -2,7 +2,8 @@ import {
     showNeighborhoodBoundaries,
     hideNeighborhoodBoundaries,
     hidePOIs,
-    closePOIPopup
+    closePOIPopup,
+    resetToCityViewIfZoomedIn
 } from "./map.js";
 
 import { closePOIPanel } from "./poi-panel.js";
@@ -85,10 +86,10 @@ export function setMode(mode) {
         showNeighborhoodBoundaries();
 
     } else {
-
         neighborhoodPanel?.classList.add("hidden");
 
         hideNeighborhoodBoundaries();
+        resetToCityViewIfZoomedIn();
     }
 
     updatePanelForMode();

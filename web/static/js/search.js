@@ -84,12 +84,15 @@ async function performSearch(
                 input.value = `${city.city}, ${city.state}`;
                 hideResults(results);
 
-                const data = await getCity(city.city, city.state);
+            const data = await getCity(city.city, city.state);
 
-                showCity(data);
-                showCityOnMap(data);
+            window.dispatchEvent(new Event("cityscope:neighborhood-housing-reset"));
+            window.cityscopeCurrentNeighborhood = null;
 
-                setMode("city");
+            showCity(data);
+            showCityOnMap(data);
+
+            setMode("city");
 
                 await setNeighborhoodAvailability(
                     data.city,

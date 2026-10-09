@@ -1501,3 +1501,27 @@ export function hideNeighborhoodBoundaries() {
         );
     }
 }
+
+export function resetToCityViewIfZoomedIn() {
+    if (!map || !currentCityBounds) return;
+
+    const cityView = getGeoJsonBounds(
+        JSON.parse(JSON.stringify(
+            map.getSource("city-boundary")._data
+        ))
+    );
+
+    if (!cityView) return;
+
+    const cityZoom = map.cameraForBounds(currentCityBounds, {
+        padding: 80
+    })?.zoom;
+
+    if (cityZoom != null && map.getZoom() > cityZoom + 0.3) {
+        map.fitBounds(currentCityBounds, {
+            padding: 80,
+            duration: 1200,
+            essential: true
+        });
+    }
+}
