@@ -25,7 +25,7 @@ function registerPinImages() {
         education: "#2979FF",
         shopping: "#FFEA00",
         financial: "#8B4513",
-        fitness: "#FFFFFF",
+        fitness: "#334155",
         recreation: "#00E5FF",
         entertainment: "#FF9100",
         lodging: "#000000",
@@ -46,7 +46,8 @@ function registerPinImages() {
         const ctx = canvas.getContext("2d");
         if (!ctx) return;
 
-        // Draw the teardrop-shaped pin.
+
+        // Draw a clean teardrop pin.
         ctx.beginPath();
         ctx.moveTo(32, 76);
         ctx.bezierCurveTo(26, 65, 5, 43, 5, 27);
@@ -57,23 +58,20 @@ function registerPinImages() {
         ctx.fillStyle = color;
         ctx.fill();
 
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = "#FFFFFF";
-        ctx.stroke();
-
-        // Cut a transparent hole through the pin.
-        ctx.globalCompositeOperation = "destination-out";
-        ctx.beginPath();
-        ctx.arc(32, 27, 7, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.globalCompositeOperation = "source-over";
-
-        // Outline the hollow center.
-        ctx.beginPath();
-        ctx.arc(32, 27, 9, 0, Math.PI * 2);
+        // Subtle dark outline instead of a thick white border.
         ctx.lineWidth = 3;
-        ctx.strokeStyle = "#FFFFFF";
+        ctx.strokeStyle = "#253047";
         ctx.stroke();
+
+        // Solid white center: no transparency cutout.
+        ctx.beginPath();
+        ctx.arc(32, 27, 8, 0, Math.PI * 2);
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = "#253047";
+        ctx.stroke();
+
 
         map.addImage(
             imageId,
@@ -598,7 +596,7 @@ export function showHousingProperties() {
             source: "housing-properties",
             layout: {
                 "icon-image": "cityscope-pin-housing",
-                "icon-size": 1,
+                "icon-size": 0.7,
                 "icon-anchor": "bottom",
                 "icon-allow-overlap": true,
                 "icon-ignore-placement": true
