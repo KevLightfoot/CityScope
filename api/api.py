@@ -47,11 +47,24 @@ boundaries = (
 
 boundaries.count()
 
-neighborhood_boundaries = (
+neighborhood_boundary_rows = (
     spark.read
     .parquet("data/processed/neighborhood_boundaries")
-    .cache()
+    .select(
+        "nbhd_id",
+        "neighborhood",
+        "city",
+        "state",
+        "state_abbr",
+        "geojson"
+    )
+    .collect()
 )
+
+neighborhood_boundaries = [
+    row.asDict()
+    for row in neighborhood_boundary_rows
+]
 
 
 # ---------------------------------------------------------
@@ -227,29 +240,16 @@ def get_neighborhood_boundaries(city: str, state: str):
     city_key = city.strip().lower()
     state_key = state.strip().lower()
 
-    results = (
-        neighborhood_boundaries
-        .filter(
-            (lower(col("city")) == city_key) &
-            (lower(col("state")) == state_key)
-        )
-        .select(
-            "nbhd_id",
-            "neighborhood",
-            "city",
-            "state",
-            "geojson"
-        )
-        .collect()
-    )
+    results = [
+        neighborhood
+        for neighborhood in neighborhood_boundaries
+        if neighborhood["city"].strip().lower() == city_key
+        and neighborhood["state"].strip().lower() == state_key
+    ]
 
     return {
-        "results": [
-            row.asDict()
-            for row in results
-        ]
+        "results": results
     }
-
 
 # ---------------------------------------------------------
 # WEATHER
