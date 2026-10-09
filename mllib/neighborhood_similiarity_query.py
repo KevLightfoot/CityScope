@@ -1,7 +1,6 @@
 """
-neighborhood_similarity_query.py uses saved Spark MLlib vectors and a
-similarity model to find the three closest neighborhoods in the same city
-and the three closest neighborhoods from other cities.
+Find the three closest neighborhoods in the same city and the three
+closest neighborhoods from other cities using the saved MLlib model.
 """
 
 import sys
@@ -46,10 +45,14 @@ query_city = sys.argv[1]
 query_neighborhood = " ".join(sys.argv[2:])
 
 
-query = neighborhood_vectors.filter(
-    (col("city") == query_city) &
-    (col("nbhd_name") == query_neighborhood)
-).limit(1)
+query = (
+    neighborhood_vectors
+    .filter(
+        (col("city") == query_city) &
+        (col("nbhd_name") == query_neighborhood)
+    )
+    .limit(1)
+)
 
 
 if query.count() == 0:
@@ -68,45 +71,38 @@ query_id = query_row["nbhd_id"]
 query_state = query_row["state"]
 
 
-similar_neighborhoods = (
-    lsh_model.approxNearestNeighbors(
-        neighborhood_vectors,
-        query_vector,
-        100
-    )
-)
-
-
-similar_neighborhoods = similar_neighborhoods.filter(
-    ~(
-        (col("city") == query_city) &
-        (col("state") == query_state) &
-        (col("nbhd_id") == query_id)
-    ) &
+valid_names = (
     col("nbhd_name").isNotNull() &
     (col("nbhd_name") != "") &
+    (col("nbhd_name").rlike(".{2,}")) &
     ~col("nbhd_name").rlike("(?i)https?://") &
     ~col("nbhd_name").rlike("^[0-9]+$")
 )
 
 
-same_city = (
-    similar_neighborhoods
+# Search the query city separately so its neighborhoods cannot get
+# pushed out by nationwide candidates.
+same_city_candidates = (
+    neighborhood_vectors
     .filter(
         (col("city") == query_city) &
         (col("state") == query_state)
     )
-    .orderBy("distCol")
-    .limit(3)
+    .filter(valid_names)
 )
 
 
-other_cities = (
-    similar_neighborhoods
+same_city = (
+    lsh_model
+    .approxNearestNeighbors(
+        same_city_candidates,
+        query_vector,
+        10
+    )
     .filter(
         ~(
-            (col("city") == query_city) &
-            (col("state") == query_state)
+            (col("nbhd_id") == query_id) &
+            (col("nbhd_name") == query_neighborhood)
         )
     )
     .orderBy("distCol")
@@ -114,16 +110,42 @@ other_cities = (
 )
 
 
-# Convert distance into a readable match score out of 10.
-# distCol = 0 gives 10/10. Larger distances produce lower scores.
+# Search the entire dataset separately for neighborhoods outside
+# the query city.
+other_city_candidates = (
+    neighborhood_vectors
+    .filter(
+        ~(
+            (col("city") == query_city) &
+            (col("state") == query_state)
+        )
+    )
+    .filter(valid_names)
+)
+
+
+other_cities = (
+    lsh_model
+    .approxNearestNeighbors(
+        other_city_candidates,
+        query_vector,
+        100
+    )
+    .orderBy("distCol")
+    .limit(3)
+)
+
+
+# Convert distance into a 0-10 similarity score.
+# Smaller distance = higher score.
 same_city = same_city.withColumn(
     "match_score",
-    round(10 / (1 + col("distCol")), 1)
+    round(10 * (-col("distCol") / 5).exp(), 1)
 )
 
 other_cities = other_cities.withColumn(
     "match_score",
-    round(10 / (1 + col("distCol")), 1)
+    round(10 * (-col("distCol") / 5).exp(), 1)
 )
 
 
