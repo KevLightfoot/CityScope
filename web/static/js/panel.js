@@ -42,6 +42,29 @@ export function setupPanel() {
                 .classList.add("hidden");
         });
 
+    // Clear map POIs when interacting with either information panel.
+    // Keep the POI browser open, and let category buttons work normally.
+    document.addEventListener("click", event => {
+        const panel = event.target.closest(
+            "#city-panel, #neighborhood-panel"
+        );
+
+        if (!panel) {
+            return;
+        }
+
+        // Category buttons open the POI browser, so don't clear markers here.
+        if (
+            event.target.closest(".poi-button") ||
+            event.target.closest("#browse-neighborhood-pois")
+        ) {
+            return;
+        }
+
+        hidePOIs();
+        closePOIPopup();
+    });
+
 
     document
         .querySelectorAll(".section-header")
