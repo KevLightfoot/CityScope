@@ -1,4 +1,9 @@
-import { searchCities, getCity, getWeather } from "./api.js";
+import {
+    searchCities,
+    getCity,
+    getWeather,
+    getCitySimilar
+} from "./api.js";
 
 let currentCity = null;
 
@@ -12,10 +17,91 @@ export function setupCompare() {
     }
 
     button.onclick = openComparePanel;
+
+    const similarSection = document.getElementById(
+    "similar-cities-section"
+);
+
+    if (similarSection) {
+        similarSection
+            .querySelector(".section-header")
+            .addEventListener("click", () => {
+                if (similarSection.classList.contains("expanded")) {
+                    loadSimilarCities();
+                }
+            });
+    }
 }
 
 
-async function openComparePanel() {
+async function loadSimilarCities() {
+    const content = document.getElementById(
+        "city-similar-content"
+    );
+
+    const city = document.getElementById(
+        "city-name"
+    )?.textContent.trim();
+
+    const state = document.getElementById(
+        "city-location"
+    )?.textContent.trim();
+
+    if (!content || !city || !state) {
+        return;
+    }
+
+    content.textContent = "Finding similar cities...";
+
+    try {
+        const cities = await getCitySimilar(city, state);
+
+        content.innerHTML = "";
+
+        if (!cities.length) {
+            content.textContent = "No similar cities found.";
+            return;
+        }
+
+        cities.forEach(item => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className = "similar-city";
+
+            const info = document.createElement("div");
+            info.className = "similar-city-info";
+
+            const name = document.createElement("span");
+            name.textContent = item.city;
+
+            const location = document.createElement("small");
+            location.textContent = item.state;
+
+            info.append(name, location);
+
+            const score = document.createElement("strong");
+            score.textContent = Number(item.match_score).toFixed(1);
+
+            button.append(info, score);
+
+            button.addEventListener("click", () => {
+                openComparePanel({
+                    city: item.city,
+                    state: item.state
+                });
+            });
+
+            content.appendChild(button);
+        });
+    } catch (error) {
+        console.error("Unable to load similar cities:", error);
+        content.textContent = "Unable to load similar cities.";
+    }
+}
+
+
+
+async function openComparePanel(preselectedCity = null) {
 
     const cityName =
         document.getElementById("city-name")?.textContent.trim();
@@ -98,6 +184,10 @@ async function openComparePanel() {
 
             await searchForCity(value);
         };
+
+    if (preselectedCity) {
+        await compareWith(preselectedCity);
+    }
 }
 
 
