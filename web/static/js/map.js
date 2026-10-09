@@ -1358,14 +1358,14 @@ export async function showNeighborhoodBoundaries() {
 
                             const zoomIntoNeighborhood = () => {
                                 map.fitBounds(bounds, {
-                                    padding: {
-                                        top: 60,
-                                        bottom: 60,
-                                        left: 60,
-                                        right: panelWidth + 60
+                                    adding: {
+                                        top: 140,
+                                        bottom: 140,
+                                        left: 80,
+                                        right: panelWidth + 80
                                     },
-                                    maxZoom: 15,
-                                    duration: 1400,
+                                    maxZoom: 13,
+                                    duration: 1800,
                                     essential: true
                                 });
                             };
