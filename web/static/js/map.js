@@ -629,21 +629,22 @@ export function plotNeighborhoodHousing(properties, boundary) {
             }
         });
 
-map.on("click", "neighborhood-housing-properties", event => {
-    event.preventDefault();
-    const feature = event.features?.[0];
-    const property = feature?.properties;
-    if (!property) return;
+    map.on("click", "neighborhood-housing-properties", event => {
+        event.originalEvent?.stopPropagation();
+        event.preventDefault();
+        const feature = event.features?.[0];
+        const property = feature?.properties;
+        if (!property) return;
 
-    const address = [property.street, property.unit]
-        .filter(Boolean)
-        .join(" ");
+        const address = [property.street, property.unit]
+            .filter(Boolean)
+            .join(" ");
 
-    const price = property.list_price != null
-        ? `$${Number(property.list_price).toLocaleString()}`
-        : "—";
+        const price = property.list_price != null
+            ? `$${Number(property.list_price).toLocaleString()}`
+            : "—";
 
-    new maplibregl.Popup({ offset: 8 })
+        new maplibregl.Popup({ offset: 8 })
         .setLngLat(event.lngLat)
         .setHTML(`
             <strong>${escapeHtml(address || "Property")}</strong><br>
@@ -1317,9 +1318,21 @@ export async function showNeighborhoodBoundaries() {
                     event => {
 
                         // If a POI was clicked at this location, let its handler own the click.
-                        const poiAtClick = map.queryRenderedFeatures(event.point, {
-                            layers: ["poi-properties"]
-                        });
+                        const interactiveLayers = [
+                            "poi-properties",
+                            "housing-properties",
+                            "neighborhood-housing-properties"
+                        ].filter(layerId => map.getLayer(layerId));
+
+                        const interactiveFeatures = interactiveLayers.length
+                            ? map.queryRenderedFeatures(event.point, {
+                                layers: interactiveLayers
+                            })
+                            : [];
+
+                        if (interactiveFeatures.length > 0) {
+                            return;
+                        }
 
                         if (poiAtClick.length > 0) {
                             return;
