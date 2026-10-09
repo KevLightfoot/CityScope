@@ -1378,7 +1378,7 @@ export async function showNeighborhoodBoundaries() {
                                         left: 80,
                                         right: panelWidth + 80
                                     },
-                                    duration: 1800,
+                                    duration: 900,
                                     essential: true
                                 });
 
