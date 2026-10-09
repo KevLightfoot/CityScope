@@ -554,7 +554,7 @@ export function setPOIs(pois) {
 
 export function showPOIs(category) {
     const features = poiFeatures
-        .filter(poi => poi.cityscope_category === category)
+        .filter(poi => !category || poi.cityscope_category === category)
         .map(poi => {
             const lat = Number(poi.latitude);
             const lng = Number(poi.longitude);
@@ -795,6 +795,13 @@ export async function showNeighborhoodBoundaries() {
 
                         const state =
                             feature.properties?.state;
+
+                        window.cityscopeCurrentNeighborhood = {
+                            city,
+                            state,
+                            neighborhood: name,
+                            nbhd_id: nbhdId
+                        };
 
                         window.dispatchEvent(
                             new CustomEvent("cityscope:neighborhood-selected", {

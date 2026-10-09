@@ -20,22 +20,58 @@ let selected = new Map();
 
 const PAGE_SIZE = 50;
 
+let scopeType = "city";
+let scopeId = null;
+let activePanelId = "city-panel";
+
+document.addEventListener("click", event => {
+    if (event.target.closest("#browse-neighborhood-pois")) {
+        openPOIPanel("");
+    }
+});
+
 
 export async function openPOIPanel(selectedCategory) {
+    category = selectedCategory || "";
 
-    category = selectedCategory;
+    const neighborhoodPanel =
+        document.getElementById("neighborhood-panel");
 
-    const cityName =
-        document.getElementById("city-name")?.textContent.trim();
+    const selectedNeighborhood =
+        window.cityscopeCurrentNeighborhood;
 
-    const state =
-        document.getElementById("city-location")?.textContent.trim();
+    const neighborhoodMode =
+        neighborhoodPanel &&
+        !neighborhoodPanel.classList.contains("hidden") &&
+        selectedNeighborhood;
 
-    if (!cityName || !state) {
-        return;
+    if (neighborhoodMode) {
+        scopeType = "neighborhood";
+
+        scopeId = [
+            selectedNeighborhood.city,
+            selectedNeighborhood.state,
+            selectedNeighborhood.nbhd_id
+        ].join("~");
+
+        activePanelId = "neighborhood-panel";
+
+        city = null;
+    } else {
+        scopeType = "city";
+        activePanelId = "city-panel";
+
+        const cityName =
+            document.getElementById("city-name")?.textContent.trim();
+
+        const state =
+            document.getElementById("city-location")?.textContent.trim();
+
+        if (!cityName || !state) return;
+
+        city = await getCity(cityName, state);
+        scopeId = city.place_GEOID;
     }
-
-    city = await getCity(cityName, state);
 
     search = "";
     letter = "";
@@ -43,7 +79,6 @@ export async function openPOIPanel(selectedCategory) {
     selected.clear();
 
     renderPanel();
-
     loadPOIs();
 }
 
@@ -179,7 +214,7 @@ function positionPanel() {
         document.getElementById("poi-browser-panel");
 
     const cityPanel =
-        document.getElementById("city-panel");
+        document.getElementById(activePanelId);
 
     if (!panel || !cityPanel) {
         return;
@@ -226,8 +261,8 @@ async function loadPOIs() {
 
         const data =
             await getPOIs(
-                "city",
-                city.place_GEOID,
+                scopeType,
+                scopeId,
                 category,
                 options
             );
@@ -298,8 +333,8 @@ function renderResults(data) {
 
                 const response =
                     await getPOIs(
-                        "city",
-                        city.place_GEOID,
+                        scopeType,
+                        scopeId,
                         category,
                         {
                             search: name,
@@ -482,8 +517,8 @@ async function showAll() {
 
         const data =
             await getPOIs(
-                "city",
-                city.place_GEOID,
+                scopeType,
+                scopeId,
                 category,
                 {
                     limit: 100,
