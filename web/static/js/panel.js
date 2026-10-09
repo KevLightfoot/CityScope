@@ -327,16 +327,17 @@ export function showCity(city) {
             : "—"
     );
 
+    const housingSection = Array.from(
+        document.querySelectorAll("#city-panel .panel-section")
+    ).find(
+        section =>
+            section.querySelector(".section-header span")
+                ?.textContent.trim() === "Housing"
+    );
 
-    // =========================
-    // CLOSE ALL SECTIONS
-    // =========================
-
-    document
-        .querySelectorAll(".panel-section")
-        .forEach(section => {
-            section.classList.remove("expanded");
-        });
+    if (housingSection?.classList.contains("expanded")) {
+        preloadHousing();
+    }
 
 }
 

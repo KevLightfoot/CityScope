@@ -12,6 +12,8 @@ let activePoiCategory = null;
 let poiPopup = null;
 let currentCity = null;
 let neighborhoodVisible = false;
+let plottedPoiIds = new Set();
+let plottedHousingIds = new Set();
 
 
 export function setupMap() {
@@ -141,6 +143,34 @@ export async function showCityOnMap(city) {
             ])
             .setPopup(popup)
             .addTo(map);
+
+
+    const cityMarkerIcon = marker.getElement().querySelector("svg");
+
+    if (cityMarkerIcon) {
+        cityMarkerIcon.animate(
+            [
+                {
+                    transform: "translateY(-12px) scale(0.65)",
+                    opacity: 0
+                },
+                {
+                    transform: "translateY(2px) scale(1.12)",
+                    opacity: 1,
+                    offset: 0.75
+                },
+                {
+                    transform: "translateY(0) scale(1)",
+                    opacity: 1
+                }
+            ],
+            {
+                duration: 500,
+                easing: "ease-out"
+            }
+        );
+    }
+
 
 
     const boundary =
@@ -330,6 +360,68 @@ function getGeoJsonBounds(geojson) {
 }
 
 
+
+
+
+function animateMarkerLayer(layerId, sourceId, features) {
+    if (!map.getLayer(layerId) || !map.getSource(sourceId)) {
+        return;
+    }
+
+    const ids = features
+        .map(feature => feature.id)
+        .filter(id => id !== undefined && id !== null);
+
+    if (ids.length === 0) {
+        return;
+    }
+
+    const duration = 450;
+    const startTime = performance.now();
+
+    ids.forEach(id => {
+        map.setFeatureState(
+            { source: sourceId, id },
+            { animationProgress: 0 }
+        );
+    });
+
+    function frame(now) {
+        const t = Math.min((now - startTime) / duration, 1);
+
+        // A small overshoot gives each marker a bounce.
+        const progress = t < 1
+            ? Math.min(
+                1,
+                1 - Math.pow(1 - t, 3) +
+                0.12 * Math.sin(t * Math.PI * 3) * (1 - t)
+            )
+            : 1;
+
+        ids.forEach(id => {
+            map.setFeatureState(
+                { source: sourceId, id },
+                { animationProgress: Math.max(0, progress) }
+            );
+        });
+
+        if (t < 1) {
+            requestAnimationFrame(frame);
+        } else {
+            ids.forEach(id => {
+                map.setFeatureState(
+                    { source: sourceId, id },
+                    { animationProgress: 1 }
+                );
+            });
+        }
+    }
+
+    requestAnimationFrame(frame);
+}
+
+
+
 function escapeHtml(value) {
 
     return String(value)
@@ -344,6 +436,7 @@ function escapeHtml(value) {
 export function setHousingProperties(properties) {
 
     housingProperties = properties || [];
+    plottedHousingIds.clear();
     housingVisible = false;
 
     if (map.getLayer("housing-properties")) {
@@ -376,8 +469,11 @@ export function showHousingProperties() {
                 return null;
             }
 
+
             return {
                 type: "Feature",
+
+                id: property.id ?? `${lng}:${lat}:${property.address || ""}`,
 
                 geometry: {
                     type: "Point",
@@ -387,8 +483,21 @@ export function showHousingProperties() {
                 properties: property
             };
 
+
         })
         .filter(Boolean);
+
+
+    const currentHousingIds = new Set(
+        features.map(feature => feature.id)
+    );
+
+    const newHousingFeatures = features.filter(
+        feature => !plottedHousingIds.has(feature.id)
+    );
+
+    plottedHousingIds = currentHousingIds;
+
 
 
     const geojson = {
@@ -412,13 +521,23 @@ export function showHousingProperties() {
             type: "circle",
             source: "housing-properties",
 
+
             paint: {
-                "circle-radius": 4,
+                "circle-radius": [
+                    "*",
+                    4,
+                    ["coalesce", ["feature-state", "animationProgress"], 1]
+                ],
                 "circle-color": "#ff6b35",
-                "circle-opacity": 0.8,
+                "circle-opacity": [
+                    "*",
+                    0.8,
+                    ["coalesce", ["feature-state", "animationProgress"], 1]
+                ],
                 "circle-stroke-color": "#ffffff",
                 "circle-stroke-width": 1
             }
+
         });
 
         map.on(
@@ -498,6 +617,18 @@ export function showHousingProperties() {
 
     housingVisible = true;
 
+
+    if (newHousingFeatures.length > 0) {
+        map.once("idle", () => {
+            animateMarkerLayer(
+                "housing-properties",
+                "housing-properties",
+                newHousingFeatures
+            );
+        });
+    }
+
+
 }
 
 
@@ -526,6 +657,7 @@ export function isHousingVisible() {
 export function clearHousingProperties() {
 
     housingProperties = [];
+    plottedHousingIds.clear();
     housingVisible = false;
 
     if (map.getLayer("housing-properties")) {
@@ -543,6 +675,10 @@ export function clearHousingProperties() {
 export function setPOIs(pois) {
     poiFeatures = pois || [];
     poiVisible = false;
+
+    if (poiFeatures.length === 0) {
+        plottedPoiIds.clear();
+    }
 
     if (map.getLayer("poi-properties")) {
         map.setLayoutProperty(
@@ -567,8 +703,11 @@ export function showPOIs(category) {
                 return null;
             }
 
+
             return {
                 type: "Feature",
+
+                id: poi.id ?? `${lng}:${lat}:${poi.name || ""}`,
 
                 geometry: {
                     type: "Point",
@@ -577,8 +716,21 @@ export function showPOIs(category) {
 
                 properties: poi
             };
+
         })
         .filter(Boolean);
+
+
+    const currentPoiIds = new Set(
+        features.map(feature => feature.id)
+    );
+
+    const newPoiFeatures = features.filter(
+        feature => !plottedPoiIds.has(feature.id)
+    );
+
+    plottedPoiIds = currentPoiIds;
+
 
     const geojson = {
         type: "FeatureCollection",
@@ -600,13 +752,23 @@ export function showPOIs(category) {
             type: "circle",
             source: "poi-properties",
 
+
             paint: {
-                "circle-radius": 5,
+                "circle-radius": [
+                    "*",
+                    5,
+                    ["coalesce", ["feature-state", "animationProgress"], 1]
+                ],
                 "circle-color": "#3CF527",
-                "circle-opacity": 0.85,
+                "circle-opacity": [
+                    "*",
+                    0.85,
+                    ["coalesce", ["feature-state", "animationProgress"], 1]
+                ],
                 "circle-stroke-color": "#ffffff",
                 "circle-stroke-width": 1
             }
+
         });
 
         map.on(
@@ -662,6 +824,17 @@ export function showPOIs(category) {
     );
 
     poiVisible = true;
+
+    if (newPoiFeatures.length > 0) {
+        map.once("idle", () => {
+            animateMarkerLayer(
+                "poi-properties",
+                "poi-properties",
+                newPoiFeatures
+            );
+        });
+    }
+
     activePoiCategory = category;
 }
 
@@ -684,6 +857,7 @@ export function hidePOIs() {
 export function clearPOIs() {
 
     poiFeatures = [];
+    plottedPoiIds.clear();
     poiVisible = false;
     activePoiCategory = null;
 
