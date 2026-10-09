@@ -630,6 +630,7 @@ export function plotNeighborhoodHousing(properties, boundary) {
         });
 
 map.on("click", "neighborhood-housing-properties", event => {
+    event.preventDefault();
     const feature = event.features?.[0];
     const property = feature?.properties;
     if (!property) return;
