@@ -83,6 +83,10 @@ function closeNeighborhoodPanel() {
 }
 
 function renderNeighborhood(data, city, state, neighborhood) {
+    document.dispatchEvent(
+        new CustomEvent("cityscope:neighborhood-housing-reset")
+    );
+
     currentNeighborhood = {
         city,
         state,

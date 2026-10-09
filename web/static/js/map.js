@@ -6,6 +6,8 @@ let map;
 let marker = null;
 let housingProperties = [];
 let housingVisible = false;
+let neighborhoodHousingVisible = false;
+let neighborhoodHousingProperties = [];
 let poiFeatures = [];
 let poiVisible = false;
 let activePoiCategory = null;
@@ -523,6 +525,176 @@ export function setHousingProperties(properties) {
 
 }
 
+function isPointInPolygon(lng, lat, geometry) {
+    if (!geometry) return false;
+
+    const ringContainsPoint = ring => {
+        let inside = false;
+
+        for (
+            let i = 0, j = ring.length - 1;
+            i < ring.length;
+            j = i++
+        ) {
+            const [xi, yi] = ring[i];
+            const [xj, yj] = ring[j];
+
+            const intersects =
+                (yi > lat) !== (yj > lat) &&
+                lng < ((xj - xi) * (lat - yi)) /
+                    ((yj - yi) || Number.EPSILON) + xi;
+
+            if (intersects) inside = !inside;
+        }
+
+        return inside;
+    };
+
+    const polygons = geometry.type === "Polygon"
+        ? [geometry.coordinates]
+        : geometry.type === "MultiPolygon"
+            ? geometry.coordinates
+            : [];
+
+    return polygons.some(polygon =>
+        ringContainsPoint(polygon[0]) &&
+        !polygon.slice(1).some(hole => ringContainsPoint(hole))
+    );
+}
+
+export function plotNeighborhoodHousing(properties, boundary) {
+    if (!map || !boundary) return 0;
+
+    const geometry = boundary.type === "Feature"
+        ? boundary.geometry
+        : boundary;
+
+    const filtered = (properties || []).filter(property => {
+        const lat = Number(property.lat);
+        const lng = Number(property.lng);
+
+        return Number.isFinite(lat) &&
+            Number.isFinite(lng) &&
+            isPointInPolygon(lng, lat, geometry);
+    });
+
+    neighborhoodHousingProperties = filtered;
+
+    const features = filtered.map((property, index) => ({
+        type: "Feature",
+        id: property.id ?? `${property.lng}:${property.lat}:${index}`,
+        geometry: {
+            type: "Point",
+            coordinates: [Number(property.lng), Number(property.lat)]
+        },
+        properties: property
+    }));
+
+    const geojson = {
+        type: "FeatureCollection",
+        features
+    };
+
+    if (!map.getSource("neighborhood-housing-properties")) {
+        map.addSource("neighborhood-housing-properties", {
+            type: "geojson",
+            data: geojson
+        });
+
+        map.addLayer({
+            id: "neighborhood-housing-properties",
+            type: "symbol",
+            source: "neighborhood-housing-properties",
+            layout: {
+                "icon-image": "cityscope-pin-housing",
+                "icon-size": 0.7,
+                "icon-anchor": "bottom",
+                "icon-allow-overlap": true,
+                "icon-ignore-placement": true
+            }
+        });
+
+        map.on("click", "neighborhood-housing-properties", event => {
+            const property = event.features?.[0]?.properties;
+            if (!property) return;
+
+            const address = [property.street, property.unit]
+                .filter(Boolean)
+                .join(" ");
+
+            const price = property.list_price != null
+                ? `$${Number(property.list_price).toLocaleString()}`
+                : "—";
+
+            new maplibregl.Popup({ offset: 8 })
+                .setLngLat(event.lngLat)
+                .setHTML(`
+                    <strong>${escapeHtml(address || "Property")}</strong><br>
+                    ${escapeHtml(property.city || "")},
+                    ${escapeHtml(property.state || "")}
+                    ${escapeHtml(property.zip || "")}
+                    <br><br>
+                    <strong>${price}</strong><br>
+                    ${escapeHtml(property.beds ?? "—")} beds ·
+                    ${escapeHtml(property.baths ?? "—")} baths<br>
+                    ${property.sqft
+                        ? `${Number(property.sqft).toLocaleString()} sq ft`
+                        : "—"}
+                `)
+                .addTo(map);
+        });
+
+        map.on("mouseenter", "neighborhood-housing-properties", () => {
+            map.getCanvas().style.cursor = "pointer";
+        });
+
+        map.on("mouseleave", "neighborhood-housing-properties", () => {
+            map.getCanvas().style.cursor = "";
+        });
+    } else {
+        map.getSource("neighborhood-housing-properties").setData(geojson);
+    }
+
+    map.setLayoutProperty(
+        "neighborhood-housing-properties",
+        "visibility",
+        features.length ? "visible" : "none"
+    );
+
+    neighborhoodHousingVisible = features.length > 0;
+
+    return features.length;
+}
+
+export function hideNeighborhoodHousing() {
+    if (map?.getLayer("neighborhood-housing-properties")) {
+        map.setLayoutProperty(
+            "neighborhood-housing-properties",
+            "visibility",
+            "none"
+        );
+    }
+
+    neighborhoodHousingVisible = false;
+}
+
+export function isNeighborhoodHousingVisible() {
+    return neighborhoodHousingVisible;
+}
+
+export function clearNeighborhoodHousing() {
+    hideNeighborhoodHousing();
+    neighborhoodHousingProperties = [];
+
+    const source = map?.getSource("neighborhood-housing-properties");
+
+    if (source) {
+        source.setData({
+            type: "FeatureCollection",
+            features: []
+        });
+    }
+}
 
 export function showHousingProperties() {
 
