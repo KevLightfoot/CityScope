@@ -375,6 +375,19 @@ function createSimilarNeighborhood(neighborhood) {
 }
 
 
+function positionNeighborhoodComparePanel() {
+    const comparePanel = document.getElementById("neighborhood-compare-panel");
+    const neighborhoodPanel = document.getElementById("neighborhood-panel");
+
+    if (!comparePanel || !neighborhoodPanel) return;
+
+    const rect = neighborhoodPanel.getBoundingClientRect();
+
+    comparePanel.style.top = `${Math.max(10, rect.top)}px`;
+    comparePanel.style.left =
+        `${Math.max(10, rect.left - comparePanel.offsetWidth - 8)}px`;
+}
+
 async function openNeighborhoodComparison(selectedNeighborhood = null) {
     if (!currentNeighborhood) return;
 
@@ -406,9 +419,14 @@ async function openNeighborhoodComparison(selectedNeighborhood = null) {
     `;
 
     document.body.appendChild(panel);
+    
+    positionNeighborhoodComparePanel();
+
+    window.addEventListener("resize", positionNeighborhoodComparePanel);
 
     panel.querySelector("#neighborhood-compare-close")
         .addEventListener("click", () => panel.remove());
+        
 
     const currentLabel = panel.querySelector("#neighborhood-compare-current");
     const searchInput = panel.querySelector("#neighborhood-compare-search");
@@ -429,9 +447,9 @@ async function openNeighborhoodComparison(selectedNeighborhood = null) {
         try {
             const candidates = await searchNeighborhoods(
                 query,
-                query ? "" : currentNeighborhood.city,
-                query ? "" : currentNeighborhood.state,
-                50
+                "",
+                "",
+                100
             );
 
             if (
@@ -449,6 +467,16 @@ async function openNeighborhoodComparison(selectedNeighborhood = null) {
                     item.state === currentNeighborhood.state &&
                     Number(item.nbhd_id) === Number(currentNeighborhood.nbhd_id)
                 )
+            );
+
+            filtered.sort((a, b) =>
+                (a.nbhd_name || "").localeCompare(
+                    b.nbhd_name || "",
+                    undefined,
+                    { sensitivity: "base" }
+                ) ||
+                (a.city || "").localeCompare(b.city || "") ||
+                (a.state || "").localeCompare(b.state || "")
             );
 
             if (!filtered.length) {
@@ -559,6 +587,7 @@ async function renderNeighborhoodComparison(other, panel) {
         }
 
         const number = Number(value);
+
         return Number.isFinite(number)
             ? `$${Math.round(number).toLocaleString()}`
             : "—";
@@ -692,6 +721,7 @@ export function setupNeighborhood() {
     document.addEventListener("neighborhood:compare", event => {
         openNeighborhoodComparison(event.detail);
     });
+
 }
 
 export function getCurrentNeighborhood() {
