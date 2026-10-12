@@ -1087,6 +1087,7 @@ export function showPOIs(category) {
                     ${escapeHtml(poi.category || "")}
                     ${poi.address ? `<br><span class="poi-popup-address">${escapeHtml(poi.address)}</span>` : ""}
                 `)
+                .addTo(map);
             }
         );
 
