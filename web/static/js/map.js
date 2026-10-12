@@ -1082,11 +1082,11 @@ export function showPOIs(category) {
                     offset: 8
                 })
                     .setLngLat(event.lngLat)
-                    .setHTML(`
-                        <strong>${escapeHtml(poi.name || "Place")}</strong><br>
-                        ${escapeHtml(poi.category || "")}
-                    `)
-                    .addTo(map);
+                .setHTML(`
+                    <strong>${escapeHtml(poi.name || "Place")}</strong><br>
+                    ${escapeHtml(poi.category || "")}
+                    ${poi.address ? `<br><span class="poi-popup-address">${escapeHtml(poi.address)}</span>` : ""}
+                `)
             }
         );
 

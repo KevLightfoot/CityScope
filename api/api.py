@@ -1,10 +1,10 @@
+import json
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import lower, col, round, exp
 from pyspark.ml.feature import BucketedRandomProjectionLSHModel
-
-import json
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, exp, lower, round
 
 app = FastAPI(title="CityScope API")
 
@@ -21,75 +21,38 @@ spark = (
     .master("local[2]")
     .getOrCreate()
 )
-
 spark.sparkContext.setLogLevel("ERROR")
-
 
 # ---------------------------------------------------------
 # CITY DATA
 # ---------------------------------------------------------
-
-cities = (
-    spark.read
-    .parquet("data/processed/cityscope_city")
-    .cache()
-)
-
+cities = (spark.read.parquet("data/processed/cityscope_city").cache())
 cities.count()
-
 
 # ---------------------------------------------------------
 # CITY AND NBHD BOUNDARY DATA
 # ---------------------------------------------------------
-
-boundaries = (
-    spark.read
-    .parquet("data/processed/place_boundaries")
-    .cache()
-)
-
+boundaries = (spark.read.parquet("data/processed/place_boundaries").cache())
 boundaries.count()
 
-with open(
-    "data/processed/neighborhood_boundaries.json",
-    "r"
-) as f:
+with open("data/processed/neighborhood_boundaries.json", "r") as f:
     neighborhood_boundaries = json.load(f)
-
-
-
 
 # ---------------------------------------------------------
 # WEATHER DATA
 # ---------------------------------------------------------
-
-weather_monthly = (
-    spark.read
-    .parquet("data/processed/weather_monthly")
-    .cache()
-)
-
+weather_monthly = (spark.read.parquet("data/processed/weather_monthly").cache())
 weather_monthly.count()
-
 
 # ---------------------------------------------------------
 # HOUSING PROPERTY DATA
 # ---------------------------------------------------------
-
-housing_properties = (
-    spark.read
-    .parquet("data/processed/housing_city_properties")
-)
-
+housing_properties = (spark.read.parquet("data/processed/housing_city_properties"))
 
 # ---------------------------------------------------------
 # Read individual POI detail data
 # ---------------------------------------------------------
-poi_detail = (
-    spark.read
-    .parquet("data/processed/poi_detail")
-)
-
+poi_detail = (spark.read.parquet("data/processed/poi_detail"))
 
 STATE_FIPS = {
     "01": "AL",
@@ -144,106 +107,57 @@ STATE_FIPS = {
     "56": "WY"
 }
 
-
 # ---------------------------------------------------------
 # CITY SIMILARITY
 # ---------------------------------------------------------
-
-city_vectors = (
-    spark.read
-    .parquet("data/processed/city_similarity_vectors")
-    .cache()
-)
-
+city_vectors = (spark.read.parquet("data/processed/city_similarity_vectors").cache())
 city_vectors.count()
-
-city_lsh_model = BucketedRandomProjectionLSHModel.load(
-    "data/processed/city_similarity_model"
-)
-
+city_lsh_model = BucketedRandomProjectionLSHModel.load("data/processed/city_similarity_model")
 
 # ---------------------------------------------------------
 # CITY SIMILARITY API
 # ---------------------------------------------------------
-
 @app.get("/api/city-similar")
-def get_city_similar(
-    city: str,
-    state: str
-):
+def get_city_similar(city: str, state: str):
     city_key = city.strip().lower()
     state_key = state.strip().lower()
 
-    query = (
-        city_vectors
-        .filter(
+    query = (city_vectors.filter(
             (lower(col("city")) == city_key) &
             (lower(col("state")) == state_key)
-        )
-        .limit(1)
+        ).limit(1)
     )
-
     query_rows = query.collect()
 
     if not query_rows:
-        raise HTTPException(
-            status_code=404,
-            detail="City not found in similarity vectors"
-        )
+        raise HTTPException(status_code=404, detail="City not found in similarity vectors")
 
     query_row = query_rows[0]
-
     similar_cities = (
-        city_lsh_model
-        .approxNearestNeighbors(
-            city_vectors,
-            query_row["features"],
-            100
-        )
+        city_lsh_model.approxNearestNeighbors(city_vectors, query_row["features"], 100)
         .filter(
-            ~(
-                (lower(col("city")) == city_key) &
-                (lower(col("state")) == state_key)
-            )
+            ~((lower(col("city")) == city_key) & (lower(col("state")) == state_key))
         )
         .orderBy("distCol")
         .limit(5)
-        .withColumn(
-            "match_score",
-            round(10 * exp(-col("distCol") / 5), 1)
-        )
+        .withColumn("match_score", round(10 * exp(-col("distCol") / 5), 1))
     )
 
     return [
-        {
-            "city": row["city"],
-            "state": row["state"],
-            "match_score": row["match_score"]
-        }
+        {"city": row["city"], "state": row["state"], "match_score": row["match_score"]}
         for row in similar_cities.collect()
     ]
-
 
 # ---------------------------------------------------------
 # NEIGHBORHOOD SIMILARITY
 # ---------------------------------------------------------
-
-neighborhood_vectors = (
-    spark.read
-    .parquet("data/processed/neighborhood_similarity_vectors")
-    .cache()
-)
-
+neighborhood_vectors = (spark.read.parquet("data/processed/neighborhood_similarity_vectors").cache())
 neighborhood_vectors.count()
-
-neighborhood_lsh_model = BucketedRandomProjectionLSHModel.load(
-    "data/processed/neighborhood_similarity_model"
-)
+neighborhood_lsh_model = BucketedRandomProjectionLSHModel.load("data/processed/neighborhood_similarity_model")
 
 # ---------------------------------------------------------
 # CITY SEARCH
 # ---------------------------------------------------------
-
 @app.get("/api/cities")
 def search_cities(q: str = ""):
     q = q.strip()
@@ -251,11 +165,7 @@ def search_cities(q: str = ""):
     if not q:
         return []
 
-    results = (
-        cities
-        .filter(
-            lower(col("city")).contains(q.lower())
-        )
+    results = (cities.filter(lower(col("city")).contains(q.lower()))
         .select("city", "state")
         .dropDuplicates()
         .orderBy("city", "state")
@@ -263,72 +173,47 @@ def search_cities(q: str = ""):
     )
 
     return [
-        {
-            "city": row["city"],
-            "state": row["state"]
-        }
+        {"city": row["city"], "state": row["state"]}
         for row in results
     ]
-
 
 # ---------------------------------------------------------
 # CITY DATA
 # ---------------------------------------------------------
-
 @app.get("/api/city/{city}/{state}")
 def get_city(city: str, state: str):
-    result = (
-        cities
-        .filter(
-            (lower(col("city")) == city.lower()) &
-            (lower(col("state")) == state.lower())
-        )
+    result = (cities.filter((lower(col("city")) == city.lower()) & (lower(col("state")) == state.lower()))
         .limit(1)
         .collect()
     )
 
     if not result:
-        raise HTTPException(
-            status_code=404,
-            detail="City not found"
-        )
-
+        raise HTTPException(status_code=404, detail="City not found")
     return result[0].asDict()
-
 
 # ---------------------------------------------------------
 # CITY BOUNDARY
 # ---------------------------------------------------------
-
 @app.get("/api/boundary/{geoid}")
 def get_boundary(geoid: str):
 
-    result = (
-        boundaries
-        .filter(col("GEOID") == geoid)
+    result = (boundaries.filter(col("GEOID") == geoid)
         .limit(1)
         .collect()
     )
 
     if not result:
-        raise HTTPException(
-            status_code=404,
-            detail="Boundary not found"
-        )
+        raise HTTPException(status_code=404, detail="Boundary not found")
 
     return result[0].asDict()
 
 # ---------------------------------------------------------
 # NBHD BOUNDARY
 # ---------------------------------------------------------
-
 def normalize_city_name(value):
-    return "".join(
-        character
-        for character in value.lower()
+    return "".join(character for character in value.lower()
         if character.isalnum()
     )
-
 
 @app.get("/api/neighborhood-available/{city}/{state}")
 def neighborhood_available(city: str, state: str):
@@ -336,14 +221,12 @@ def neighborhood_available(city: str, state: str):
     city_key = normalize_city_name(city)
     state_key = state.strip().lower()
 
-    return {
-        "available": any(
-            normalize_city_name(neighborhood["city"]) == city_key
-            and neighborhood["state"].strip().lower() == state_key
-            for neighborhood in neighborhood_boundaries
+    return {"available": any(
+        normalize_city_name(neighborhood["city"]) == city_key
+        and neighborhood["state"].strip().lower() == state_key
+        for neighborhood in neighborhood_boundaries
         )
     }
-
 
 @app.get("/api/neighborhood-boundaries/{city}/{state}")
 def get_neighborhood_boundaries(city: str, state: str):
@@ -352,8 +235,7 @@ def get_neighborhood_boundaries(city: str, state: str):
     state_key = state.strip().lower()
 
     results = [
-        neighborhood
-        for neighborhood in neighborhood_boundaries
+        neighborhood for neighborhood in neighborhood_boundaries
         if normalize_city_name(neighborhood["city"]) == city_key
         and neighborhood["state"].strip().lower() == state_key
     ]
@@ -365,13 +247,7 @@ def get_neighborhood_boundaries(city: str, state: str):
 # ---------------------------------------------------------
 # NEIGHBORHOOD DATA
 # ---------------------------------------------------------
-
-neighborhood_cityscope = (
-    spark.read
-    .parquet("data/processed/neighborhood_cityscope")
-    .cache()
-)
-
+neighborhood_cityscope = (spark.read.parquet("data/processed/neighborhood_cityscope").cache())
 neighborhood_cityscope.count()
 
 @app.get("/api/neighborhood-search")
@@ -386,20 +262,13 @@ def search_neighborhoods(
     state_key = state.strip().lower()
     limit = max(1, min(limit, 100))
 
-    results = neighborhood_cityscope.filter(
-        col("nbhd_name").isNotNull()
-        & (col("nbhd_name") != "")
-    )
+    results = neighborhood_cityscope.filter(col("nbhd_name").isNotNull() & (col("nbhd_name") != ""))
 
     if city_key:
-        results = results.filter(
-            lower(col("city")) == city_key
-        )
+        results = results.filter(lower(col("city")) == city_key)
 
     if state_key:
-        results = results.filter(
-            lower(col("state")) == state_key
-        )
+        results = results.filter(lower(col("state")) == state_key)
 
     if query:
         results = results.filter(
@@ -428,14 +297,8 @@ def search_neighborhoods(
     ]
 
 @app.get("/api/neighborhood/{city}/{state}/{nbhd_id}")
-def get_neighborhood(
-    city: str,
-    state: str,
-    nbhd_id: float
-):
-    result = (
-        neighborhood_cityscope
-        .filter(
+def get_neighborhood(city: str,state: str, nbhd_id: float):
+    result = (neighborhood_cityscope.filter(
             (lower(col("city")) == city.strip().lower()) &
             (lower(col("state")) == state.strip().lower()) &
             (col("nbhd_id") == nbhd_id)
@@ -445,28 +308,18 @@ def get_neighborhood(
     )
 
     if not result:
-        raise HTTPException(
-            status_code=404,
-            detail="Neighborhood not found"
-        )
-
+        raise HTTPException(status_code=404, detail="Neighborhood not found")
     return result[0].asDict()
 
 # ---------------------------------------------------------
 # NEIGHBORHOOD SIMILARITY
 # ---------------------------------------------------------
-
 @app.get("/api/neighborhood-similar")
-def get_neighborhood_similar(
-    city: str,
-    neighborhood: str
-):
+def get_neighborhood_similar(city: str, neighborhood: str):
     city_key = city.strip().lower()
     neighborhood_key = neighborhood.strip().lower()
 
-    query = (
-        neighborhood_vectors
-        .filter(
+    query = (neighborhood_vectors.filter(
             (lower(col("city")) == city_key) &
             (lower(col("nbhd_name")) == neighborhood_key)
         )
@@ -474,10 +327,7 @@ def get_neighborhood_similar(
     )
 
     if query.count() == 0:
-        raise HTTPException(
-            status_code=404,
-            detail="Neighborhood not found"
-        )
+        raise HTTPException(status_code=404, detail="Neighborhood not found")
 
     query_row = query.collect()[0]
 
@@ -493,18 +343,14 @@ def get_neighborhood_similar(
         ~col("nbhd_name").rlike("^[0-9]+$")
     )
 
-    same_city_candidates = (
-        neighborhood_vectors
-        .filter(
+    same_city_candidates = (neighborhood_vectors.filter(
             (lower(col("city")) == city_key) &
             (col("state") == query_state)
         )
         .filter(valid_names)
     )
 
-    same_city = (
-        neighborhood_lsh_model
-        .approxNearestNeighbors(
+    same_city = (neighborhood_lsh_model.approxNearestNeighbors(
             same_city_candidates,
             query_vector,
             10
@@ -517,15 +363,10 @@ def get_neighborhood_similar(
         )
         .orderBy("distCol")
         .limit(3)
-        .withColumn(
-            "match_score",
-            round(10 * exp(-col("distCol") / 5), 1)
-        )
+        .withColumn("match_score", round(10 * exp(-col("distCol") / 5), 1))
     )
 
-    other_city_candidates = (
-        neighborhood_vectors
-        .filter(
+    other_city_candidates = (neighborhood_vectors.filter(
             ~(
                 (lower(col("city")) == city_key) &
                 (col("state") == query_state)
@@ -534,19 +375,14 @@ def get_neighborhood_similar(
         .filter(valid_names)
     )
 
-    other_cities = (
-        neighborhood_lsh_model
-        .approxNearestNeighbors(
+    other_cities = (neighborhood_lsh_model.approxNearestNeighbors(
             other_city_candidates,
             query_vector,
             100
         )
         .orderBy("distCol")
         .limit(3)
-        .withColumn(
-            "match_score",
-            round(10 * exp(-col("distCol") / 5), 1)
-        )
+        .withColumn("match_score", round(10 * exp(-col("distCol") / 5), 1))
     )
 
     def format_results(df):
@@ -561,22 +397,14 @@ def get_neighborhood_similar(
             for row in df.collect()
         ]
 
-    return {
-        "same_city": format_results(same_city),
-        "other_cities": format_results(other_cities)
-    }
+    return {"same_city": format_results(same_city), "other_cities": format_results(other_cities)}
 
 # ---------------------------------------------------------
 # WEATHER
 # ---------------------------------------------------------
-
 @app.get("/api/weather/{geoid}")
 def get_weather(geoid: str):
-    result = (
-        weather_monthly
-        .filter(
-            col("place_GEOID") == geoid
-        )
+    result = (weather_monthly.filter(col("place_GEOID") == geoid)
         .select(
             "month",
             "avg_temp",
@@ -588,10 +416,7 @@ def get_weather(geoid: str):
     )
 
     if not result:
-        raise HTTPException(
-            status_code=404,
-            detail="Weather data not found"
-        )
+        raise HTTPException(status_code=404, detail="Weather data not found")
 
     monthly = [
         {
@@ -609,7 +434,6 @@ def get_weather(geoid: str):
         "Summer": [6, 7, 8],
         "Fall": [9, 10, 11]
     }
-
     seasonal = []
 
     for season, months in seasons.items():
@@ -641,24 +465,18 @@ def get_weather(geoid: str):
             "avg_high": average("avg_high")
         })
 
-    return {
-        "monthly": monthly,
-        "seasonal": seasonal
-    }
+    return {"monthly": monthly, "seasonal": seasonal}
 
 
 # ---------------------------------------------------------
 # HOUSING PROPERTIES
 # ---------------------------------------------------------
-
 @app.get("/api/housing/{city}/{state}")
 def get_housing(city: str, state: str):
     city_key = city.strip().lower()
     state_key = state.strip().lower()
 
-    result = (
-        housing_properties
-        .filter(
+    result = (housing_properties.filter(
             (col("city_key") == city_key) &
             (col("state_key") == state_key)
         )
@@ -683,10 +501,7 @@ def get_housing(city: str, state: str):
         .collect()
     )
 
-    return [
-        row.asDict()
-        for row in result
-    ]
+    return [row.asDict() for row in result]
 
 
 def point_in_ring(longitude, latitude, ring):
@@ -713,7 +528,6 @@ def point_in_ring(longitude, latitude, ring):
 
     return inside
 
-
 def point_in_polygon(longitude, latitude, polygon):
     if not polygon or not point_in_ring(longitude, latitude, polygon[0]):
         return False
@@ -725,7 +539,6 @@ def point_in_polygon(longitude, latitude, polygon):
 
     return True
 
-
 def point_in_geometry(longitude, latitude, geometry):
     if not geometry:
         return False
@@ -734,22 +547,23 @@ def point_in_geometry(longitude, latitude, geometry):
     coordinates = geometry.get("coordinates")
 
     if geometry_type == "Feature":
-        return point_in_geometry(
-            longitude,
-            latitude,
-            geometry.get("geometry")
-        )
+        return point_in_geometry(longitude, latitude, geometry.get("geometry"))
 
     if geometry_type == "Polygon":
         return point_in_polygon(longitude, latitude, coordinates)
 
     if geometry_type == "MultiPolygon":
-        return any(
-            point_in_polygon(longitude, latitude, polygon)
-            for polygon in coordinates
-        )
+        return any(point_in_polygon(longitude, latitude, polygon) for polygon in coordinates)
 
     return False
+
+def format_poi_address(poi):
+    addresses = poi.pop("addresses", None) or []
+    address = addresses[0] if addresses else {}
+    if hasattr(address, "asDict"):
+        address = address.asDict()
+    poi["address"] = ", ".join(str(address[k]).strip() for k in ("freeform", "locality", "region", "postcode") if address.get(k) and str(address[k]).strip())
+    return poi
 
 def self_safe_float(value):
     try:
@@ -777,42 +591,27 @@ def get_pois(
 
     if scope_type == "city":
         if len(scope_id) != 7:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid city scope"
-            )
+            raise HTTPException(status_code=400, detail="Invalid city scope")
 
         state = STATE_FIPS.get(scope_id[:2])
 
         if state is None:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid city scope"
-            )
+            raise HTTPException(status_code=400, detail="Invalid city scope")
 
-        results = poi_detail.filter(
-            (col("state") == state)
-            & (col("place_GEOID") == scope_id)
-        )
+        results = poi_detail.filter((col("state") == state) & (col("place_GEOID") == scope_id))
 
     elif scope_type == "neighborhood":
         parts = scope_id.split("~")
 
         if len(parts) != 3:
-            raise HTTPException(
-                status_code=400,
-                detail="Neighborhood scope must be city~state~nbhd_id"
-            )
+            raise HTTPException(status_code=400, detail="Neighborhood scope must be city~state~nbhd_id")
 
         city_name, state_name, nbhd_id = parts
 
         try:
             requested_nbhd_id = float(nbhd_id)
         except (TypeError, ValueError):
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid neighborhood ID"
-            )
+            raise HTTPException(status_code=400, detail="Invalid neighborhood ID")
 
         city_key = normalize_city_name(city_name)
         state_key = state_name.strip().lower()
@@ -828,10 +627,7 @@ def get_pois(
         )
 
         if boundary is None:
-            raise HTTPException(
-                status_code=404,
-                detail="Neighborhood boundary not found"
-            )
+            raise HTTPException(status_code=404, detail="Neighborhood boundary not found")
 
         geometry_value = boundary.get("geojson")
 
@@ -842,14 +638,9 @@ def get_pois(
                 else geometry_value
             )
         except (TypeError, json.JSONDecodeError):
-            raise HTTPException(
-                status_code=500,
-                detail="Invalid neighborhood geometry"
-            )
+            raise HTTPException(status_code=500, detail="Invalid neighborhood geometry")
 
-        city_rows = (
-            cities
-            .filter(lower(col("state")) == state_key)
+        city_rows = (cities.filter(lower(col("state")) == state_key)
             .select("city", "place_GEOID")
             .collect()
         )
@@ -863,23 +654,15 @@ def get_pois(
         )
 
         if city_row is None:
-            raise HTTPException(
-                status_code=404,
-                detail="City not found"
-            )
+            raise HTTPException(status_code=404, detail="City not found")
 
         place_geoid = city_row["place_GEOID"]
         poi_state = STATE_FIPS.get(place_geoid[:2])
 
         if poi_state is None:
-            raise HTTPException(
-                status_code=400,
-                detail="Invalid city state"
-            )
+            raise HTTPException(status_code=400, detail="Invalid city state")
 
-        candidates = (
-            poi_detail
-            .filter(
+        candidates = (poi_detail.filter(
                 (col("state") == poi_state)
                 & (col("place_GEOID") == place_geoid)
                 & col("longitude").isNotNull()
@@ -889,19 +672,13 @@ def get_pois(
         )
 
         if category:
-            candidates = candidates.filter(
-                lower(col("cityscope_category")) == category
-            )
+            candidates = candidates.filter(lower(col("cityscope_category")) == category)
 
         if search:
-            candidates = candidates.filter(
-                lower(col("name")).contains(search)
-            )
+            candidates = candidates.filter(lower(col("name")).contains(search))
 
         if starts_with:
-            candidates = candidates.filter(
-                lower(col("name")).startswith(starts_with)
-            )
+            candidates = candidates.filter(lower(col("name")).startswith(starts_with))
 
         matching_rows = []
 
@@ -916,9 +693,10 @@ def get_pois(
             "place_name",
             "state",
             "longitude",
-            "latitude"
+            "latitude",
+            "addresses"
         ).toLocalIterator():
-            poi = row.asDict()
+            poi = format_poi_address(row.asDict())
 
             try:
                 longitude = float(poi["longitude"])
@@ -944,29 +722,18 @@ def get_pois(
         }
 
     else:
-        raise HTTPException(
-            status_code=400,
-            detail="Unsupported POI scope"
-        )
+        raise HTTPException(status_code=400, detail="Unsupported POI scope")
 
     if category:
-        results = results.filter(
-            lower(col("cityscope_category")) == category
-        )
+        results = results.filter(lower(col("cityscope_category")) == category)
 
     if search:
-        results = results.filter(
-            lower(col("name")).contains(search)
-        )
+        results = results.filter(lower(col("name")).contains(search))
 
     if starts_with:
-        results = results.filter(
-            lower(col("name")).startswith(starts_with)
-        )
+        results = results.filter(lower(col("name")).startswith(starts_with))
 
-    rows = (
-        results
-        .filter(col("name").isNotNull())
+    rows = (results.filter(col("name").isNotNull())
         .select(
             "id",
             "name",
@@ -978,7 +745,8 @@ def get_pois(
             "place_name",
             "state",
             "longitude",
-            "latitude"
+            "latitude",
+            "addresses"
         )
         .orderBy(lower(col("name")), col("id"))
         .limit(offset + limit + 1)
@@ -992,6 +760,6 @@ def get_pois(
         rows = rows[:limit]
 
     return {
-        "results": [row.asDict() for row in rows],
+        "results": [format_poi_address(row.asDict()) for row in rows],
         "has_more": has_more
     }
