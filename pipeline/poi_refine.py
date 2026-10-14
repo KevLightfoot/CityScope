@@ -9,7 +9,7 @@ spark = (
     .getOrCreate()
 )
 
-df = spark.read.parquet("data/processed/poi_detail_with_addy")
+df = spark.read.parquet("data/processed/poi_detail")
 df.select("addresses").printSchema()
 
 """
