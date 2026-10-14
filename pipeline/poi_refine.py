@@ -9,6 +9,10 @@ spark = (
     .getOrCreate()
 )
 
+df = spark.read.parquet("data/processed/poi_detail_with_addy")
+df.select("addresses").printSchema()
+
+"""
 df_dupe = (
     spark.read.parquet("data/processed/poi_detail")
     .select(
@@ -35,3 +39,4 @@ df_dupes.show(50, truncate=False)
 # Count how many distinct name/address combinations are duplicated
 print("Duplicate name/address combinations:", df_dupes.count())
 
+"""
