@@ -87,30 +87,21 @@ spark.stop()
 """
 
 
-from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, lower
-
-spark = (
-    SparkSession.builder
-    .master("local[4]")
-    .appName("Inspect_Dominos_Silsbee")
-    .getOrCreate()
-)
+from pyspark.sql.functions import col
 
 df = spark.read.parquet("data/processed/poi_detail")
 
-# First, see all available fields, including coordinates and IDs
-df.printSchema()
+total = df.count()
+print(f"Total POIs: {total:,}\n")
 
-# Find every Domino's record in Silsbee
-dominos = df.filter(
-    lower(col("name")).contains("domino")
-    & lower(col("addresses")[0]["locality"]).contains("silsbee")
-)
+for threshold in [0.50, 0.60, 0.70, 0.75, 0.80, 0.85, 0.90]:
+    retained = df.filter(
+        col("confidence") >= threshold
+    ).count()
 
-print("Matching records:", dominos.count())
+    print(
+        f"Threshold {threshold:.2f}: "
+        f"{retained:,} retained "
+        f"({retained / total * 100:.2f}%)"
+    )
 
-# Display each complete record vertically
-dominos.show(50, truncate=False, vertical=True)
-
-spark.stop()
