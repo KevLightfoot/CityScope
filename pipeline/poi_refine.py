@@ -10,7 +10,7 @@ spark = (
 )
 
 df_dupe = (
-    spark.read.parquet("data/processed/poi_detail_with_addy")
+    spark.read.parquet("data/processed/poi_detail")
     .select(
         col("addresses"),
         col("name")
