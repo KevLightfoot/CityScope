@@ -8,7 +8,7 @@ spark = (
     .appName("CityScope_POI_Refine")
     .getOrCreate()
 )
-
+"""
 # Load POIs
 df = spark.read.parquet("data/processed/poi_detail")
 
@@ -51,11 +51,66 @@ df_dupes = (
 
 df_dupes.show(50, truncate=False)
 
+
+from pyspark.sql.functions import sum as spark_sum, count, col
+
+# Total POI records in the original dataset
+total_pois = spark.read.parquet(
+    "data/processed/poi_detail"
+).count()
+
+# Number of records represented by duplicate groups
+duplicate_group_records = df_dupes.agg(
+    spark_sum("poi_count")
+).first()[0]
+
+# Number of excess records if retaining one record per group
+excess_duplicates = df_dupes.selectExpr(
+    "sum(poi_count - 1) AS excess"
+).first()["excess"]
+
+print(f"Total POIs: {total_pois:,}")
+print(f"Records in duplicate groups: {duplicate_group_records:,}")
+print(f"Excess duplicate records: {excess_duplicates:,}")
+print(f"Duplicate combinations: {df_dupes.count():,}")
+print(f"Excess records as % of dataset: {excess_duplicates / total_pois * 100:.3f}%")
+
+
 print("Duplicate combinations:", df_dupes.count())
 
 print(
     "Excess duplicate records:",
     df_dupes.selectExpr("sum(poi_count - 1)").first()[0]
 )
+
+spark.stop()
+"""
+
+
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import col, lower
+
+spark = (
+    SparkSession.builder
+    .master("local[4]")
+    .appName("Inspect_Dominos_Silsbee")
+    .getOrCreate()
+)
+
+df = spark.read.parquet("data/processed/poi_detail")
+
+# First, see all available fields, including coordinates and IDs
+df.printSchema()
+
+# Find every Domino's record in Silsbee
+dominos = df.filter(
+    lower(col("name")).contains("domino")
+    & lower(col("addresses")[0]["locality"]).contains("silsbee")
+)
+
+print("Matching records:", dominos.count())
+
+# Display each complete record vertically
+dominos.show(50, truncate=False, vertical=True)
 
 spark.stop()
