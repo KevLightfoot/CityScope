@@ -10,8 +10,7 @@ spark = (
 )
 
 df = spark.read.parquet("data/processed/poi_detail")
-df.select("addresses").printSchema()
-
+df.select("name", "addresses").show(30, truncate=False)
 """
 df_dupe = (
     spark.read.parquet("data/processed/poi_detail")
